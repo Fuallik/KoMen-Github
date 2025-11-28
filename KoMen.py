@@ -233,7 +233,7 @@ def verifikasiStok():
 
         print("\n===DAFTAR PENGAJUAN STOK (STATUS: pending)===")
         query_pending = """
-            SELECT v.id_verifikasi, p.nama, v.tanggal_terverifikasi
+            SELECT v.id_verifikasi, p.nama, v.status_verifikasi ,v.tanggal_terverifikasi
             FROM verifikasi v JOIN petani_kopi p ON v.petani_kopi_id_petani = p.id_petani
             WHERE v.status_verifikasi = 'pending'
             ORDER BY v.id_verifikasi ASC"""
@@ -247,7 +247,7 @@ def verifikasiStok():
         
         for row in rows:
             id_verifikasi, nama_petani, status, tgl = row
-            print(f"ID Verifikasi: {id_verifikasi} | Petani: {nama_petani} | Status: {status}")
+            print(f"ID Verifikasi: {id_verifikasi} | Petani: {nama_petani} | Status: {status}") 
 
         try:
             pilih = int(input("\nMasukkan ID verifikasi yang ingin diproses (0 untuk kembali): "))
