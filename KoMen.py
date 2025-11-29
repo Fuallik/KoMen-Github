@@ -976,14 +976,3 @@ def KoMen():
             print("Pilihan Invalid")
 
 KoMen()
-
-
-
-
-
-
-
-
-#addKopi("27-10-2025", "kopi jayapura") ini buat nambah
-#getAdminsById(1)
-#updateProduct('Semi God Bintang', 2)
