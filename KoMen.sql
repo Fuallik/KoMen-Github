@@ -1,154 +1,293 @@
--- ROLES
+-- ============================
+-- TABLE: role
+-- ============================
 CREATE TABLE roles (
     id_role SERIAL PRIMARY KEY,
     nama_role VARCHAR(20) NOT NULL
 );
 
--- AKUN
+-- ============================
+-- TABLE: akun
+-- ============================
 CREATE TABLE akun (
     id_akun SERIAL PRIMARY KEY,
-    role_id_role INT NOT NULL REFERENCES roles(id_role),
-    username VARCHAR(50) NOT NULL,
+    id_role INTEGER NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
     passwords VARCHAR(50) NOT NULL
 );
 
--- ADMINS
+ALTER TABLE akun
+    ADD CONSTRAINT akun_role_fk FOREIGN KEY (id_role)
+    REFERENCES roles(id_role);
+
+-- ============================
+-- TABLE: admins
+-- ============================
 CREATE TABLE admins (
     id_admin SERIAL PRIMARY KEY,
     nama VARCHAR(50) NOT NULL,
     no_telp VARCHAR(20) NOT NULL,
-    akun_id_akun INT NOT NULL REFERENCES akun(id_akun)
+    id_akun INTEGER NOT NULL
 );
 
--- PEMBELI
+ALTER TABLE admins
+    ADD CONSTRAINT admins_akun_fk FOREIGN KEY (id_akun)
+    REFERENCES akun(id_akun);
+
+-- ============================
+-- TABLE: kecamatan
+-- ============================
+CREATE TABLE kecamatan (
+    id_kecamatan SERIAL PRIMARY KEY,
+    nama_kecamatan VARCHAR(50) NOT NULL
+);
+
+-- ============================
+-- TABLE: kelurahan
+-- ============================
+CREATE TABLE kelurahan (
+    id_kelurahan SERIAL PRIMARY KEY,
+    nama_kelurahan VARCHAR(50) NOT NULL,
+    id_kecamatan INTEGER NOT NULL
+);
+
+ALTER TABLE kelurahan
+    ADD CONSTRAINT kelurahan_kecamatan_fk FOREIGN KEY (id_kecamatan)
+    REFERENCES kecamatan(id_kecamatan);
+
+-- ============================
+-- TABLE: jenis_kopi
+-- ============================
+CREATE TABLE jenis_kopi (
+    id_jenis_kopi SERIAL PRIMARY KEY,
+    jenis_kopi VARCHAR(100)
+);
+
+-- ============================
+-- TABLE: kopi
+-- ============================
+CREATE TABLE kopi (
+    id_kopi SERIAL PRIMARY KEY,
+    jenis_kopi VARCHAR(50) NOT NULL,
+    nama_kopi VARCHAR(50) NOT NULL,
+    deskripsi TEXT NOT NULL,
+    harga INTEGER NOT NULL,
+    jumlah_stok INTEGER NOT NULL,
+    kualitas VARCHAR(1) NOT NULL,
+    id_jenis_kopi INTEGER NOT NULL
+);
+
+ALTER TABLE kopi
+    ADD CONSTRAINT kopi_jenis_fk FOREIGN KEY (id_jenis_kopi)
+    REFERENCES jenis_kopi(id_jenis_kopi);
+
+-- ============================
+-- TABLE: pembeli
+-- ============================
 CREATE TABLE pembeli (
     id_pembeli SERIAL PRIMARY KEY,
     nama VARCHAR(50) NOT NULL,
     no_telp VARCHAR(20) NOT NULL,
     alamat VARCHAR(50) NOT NULL,
-    akun_id_akun INT NOT NULL REFERENCES akun(id_akun)
+    id_akun INTEGER NOT NULL,
+    id_kelurahan INTEGER NOT NULL
 );
 
--- PETANI KOPI
+ALTER TABLE pembeli
+    ADD CONSTRAINT pembeli_akun_fk FOREIGN KEY (id_akun)
+    REFERENCES akun(id_akun);
+
+ALTER TABLE pembeli
+    ADD CONSTRAINT pembeli_kelurahan_fk FOREIGN KEY (id_kelurahan)
+    REFERENCES kelurahan(id_kelurahan);
+
+-- ============================
+-- TABLE: petani_kopi
+-- ============================
 CREATE TABLE petani_kopi (
     id_petani SERIAL PRIMARY KEY,
     nama VARCHAR(50) NOT NULL,
     no_telp VARCHAR(20) NOT NULL,
     alamat VARCHAR(50) NOT NULL,
-    akun_id_akun INT NOT NULL REFERENCES akun(id_akun)
+    id_akun INTEGER NOT NULL,
+    id_kelurahan INTEGER NOT NULL
 );
 
--- KOPI
-CREATE TABLE kopi (
-    id_kopi SERIAL PRIMARY KEY,
-    jenis_kopi VARCHAR(50) NOT NULL,
-    deskripsi TEXT NOT NULL,
-    harga INT NOT NULL,
-    jumlah_stok INT NOT NULL,
-    kualitas VARCHAR(1) NOT NULL
-);
+ALTER TABLE petani_kopi
+    ADD CONSTRAINT petani_akun_fk FOREIGN KEY (id_akun)
+    REFERENCES akun(id_akun);
 
--- DATA PENANAMAN
+ALTER TABLE petani_kopi
+    ADD CONSTRAINT petani_kelurahan_fk FOREIGN KEY (id_kelurahan)
+    REFERENCES kelurahan(id_kelurahan);
+
+-- ============================
+-- TABLE: data_penanaman
+-- ============================
 CREATE TABLE data_penanaman (
     id_penanaman SERIAL PRIMARY KEY,
     tanggal_penanaman DATE NOT NULL,
     deskripsi TEXT NOT NULL,
-    jenis_kopi VARCHAR(50),
-    kuantitas INT
+    jenis_kopi VARCHAR(100) NOT NULL,
+    kuantitas INTEGER NOT NULL
 );
 
--- DATA HARIAN
+-- ============================
+-- TABLE: data_harian
+-- ============================
 CREATE TABLE data_harian (
     id_harian SERIAL PRIMARY KEY,
-    data_penanaman_id_penanaman INT NOT NULL REFERENCES data_penanaman(id_penanaman),
+    id_penanaman INTEGER NOT NULL,
     tanggal_penanaman DATE NOT NULL,
     deskripsi TEXT NOT NULL
 );
 
--- ORDERS
+ALTER TABLE data_harian
+    ADD CONSTRAINT dataharian_penanaman_fk FOREIGN KEY (id_penanaman)
+    REFERENCES data_penanaman(id_penanaman);
+
+-- ============================
+-- TABLE: orders
+-- ============================
 CREATE TABLE orders (
     id_order SERIAL PRIMARY KEY,
     tanggal_order DATE NOT NULL,
-    transaksi_id_transaksi INT,          -- FK ditambah belakangan (karena hubungan saling referensi)
-    pembeli_id_pembeli INT NOT NULL REFERENCES pembeli(id_pembeli)
+    id_transaksi INTEGER,
+    id_pembeli INTEGER NOT NULL
 );
 
--- TRANSAKSI
+ALTER TABLE orders
+    ADD CONSTRAINT orders_pembeli_fk FOREIGN KEY (id_pembeli)
+    REFERENCES pembeli(id_pembeli);
+
+-- ============================
+-- TABLE: transaksi
+-- ============================
 CREATE TABLE transaksi (
     id_transaksi SERIAL PRIMARY KEY,
     tanggal_transaksi DATE NOT NULL,
     status_pembayaran VARCHAR(20) NOT NULL,
-    orders_id_order INT NOT NULL         -- FK ditambah belakangan (karena hubungan saling referensi)
+    id_order INTEGER
 );
 
--- DETAIL ORDER
-CREATE TABLE order_detail (
+ALTER TABLE transaksi
+    ADD CONSTRAINT transaksi_orders_fk FOREIGN KEY (id_order)
+    REFERENCES orders(id_order);
+
+ALTER TABLE orders
+    ADD CONSTRAINT orders_transaksi_fk FOREIGN KEY (id_transaksi)
+    REFERENCES transaksi(id_transaksi);
+
+-- ============================
+-- TABLE: detail_order
+-- ============================
+CREATE TABLE detail_order (
     id_detail_order SERIAL PRIMARY KEY,
-    harga INT NOT NULL,
-    kuantitas INT NOT NULL,
-    orders_id_order INT NOT NULL REFERENCES orders(id_order),
-    kopi_id_kopi INT NOT NULL REFERENCES kopi(id_kopi)
+    harga INTEGER NOT NULL,
+    kuantitas INTEGER NOT NULL,
+    id_order INTEGER NOT NULL,
+    id_kopi INTEGER NOT NULL
 );
 
--- VERIFIKASI
+ALTER TABLE detail_order
+    ADD CONSTRAINT detailorder_kopi_fk FOREIGN KEY (id_kopi)
+    REFERENCES kopi(id_kopi);
+
+ALTER TABLE detail_order
+    ADD CONSTRAINT detailorder_orders_fk FOREIGN KEY (id_order)
+    REFERENCES orders(id_order);
+
+-- ============================
+-- TABLE: detail_petani
+-- ============================
+CREATE TABLE detail_petani (
+    id_detail_petani SERIAL PRIMARY KEY,
+    id_petani INTEGER NOT NULL,
+    id_penanaman INTEGER NOT NULL,
+    id_kopi INTEGER NOT
+);
+
+ALTER TABLE detail_petani
+    ADD CONSTRAINT detailpetani_petani_fk FOREIGN KEY (id_petani)
+    REFERENCES petani_kopi(id_petani);
+
+ALTER TABLE detail_petani
+    ADD CONSTRAINT detailpetani_penanaman_fk FOREIGN KEY (id_penanaman)
+    REFERENCES data_penanaman(id_penanaman);
+
+ALTER TABLE detail_petani
+    ADD CONSTRAINT detailpetani_kopi_fk FOREIGN KEY (id_kopi)
+    REFERENCES kopi(id_kopi);
+
+-- ============================
+-- TABLE: verifikasi
+-- ============================
 CREATE TABLE verifikasi (
     id_verifikasi SERIAL PRIMARY KEY,
-    admins_id_admin INT REFERENCES admins(id_admin),
-    petani_kopi_id_petani INT NOT NULL REFERENCES petani_kopi(id_petani),
-    tanggal_terverifikasi DATE
+    id_admin INTEGER NOT NULL,
+    id_petani INTEGER NOT NULL,
+    status_verifikasi VARCHAR(10) NOT NULL,
+    tanggal_terverifikasi DATE NOT NULL
 );
 
--- DETAIL VERIFIKASI
+ALTER TABLE verifikasi
+    ADD CONSTRAINT verifikasi_admin_fk FOREIGN KEY (id_admin)
+    REFERENCES admins(id_admin);
+
+ALTER TABLE verifikasi
+    ADD CONSTRAINT verifikasi_petani_fk FOREIGN KEY (id_petani)
+    REFERENCES petani_kopi(id_petani);
+
+-- ============================
+-- TABLE: detail_verifikasi
+-- ============================
 CREATE TABLE detail_verifikasi (
     id_detail_verifikasi SERIAL PRIMARY KEY,
-    kuantitas INT NOT NULL,
-    verifikasi_id_verifikasi INT NOT NULL REFERENCES verifikasi(id_verifikasi),
-    kopi_id_kopi INT REFERENCES kopi(id_kopi),
+    kuantitas INTEGER NOT NULL,
+    id_verifikasi INTEGER NOT NULL,
+    id_kopi INTEGER NOT NULL,
     jenis_kopi_baru VARCHAR(100),
     deskripsi_baru TEXT,
-    harga_baru INT,
+    harga_baru INTEGER,
     kualitas_baru VARCHAR(1)
 );
 
--- FEEDBACK
+ALTER TABLE detail_verifikasi
+    ADD CONSTRAINT detailverifikasi_verifikasi_fk FOREIGN KEY (id_verifikasi)
+    REFERENCES verifikasi(id_verifikasi);
+
+ALTER TABLE detail_verifikasi
+    ADD CONSTRAINT detailverifikasi_kopi_fk FOREIGN KEY (id_kopi)
+    REFERENCES kopi(id_kopi);
+
+-- ============================
+-- TABLE: feedback
+-- ============================
 CREATE TABLE feedback (
     id_feedback SERIAL PRIMARY KEY,
-    admins_id_admin INT NOT NULL REFERENCES admins(id_admin),
-    data_harian_id_harian INT NOT NULL REFERENCES data_harian(id_harian),
+    id_admin INTEGER NOT NULL,
+    id_harian INTEGER NOT NULL,
     tanggal_feedback DATE NOT NULL,
+    status_verifikasi VARCHAR(20) NOT NULL,
     catatan_feedback TEXT NOT NULL
 );
 
--- DETAIL PETANI
-CREATE TABLE detail_petani (
-    id_detail_petani SERIAL PRIMARY KEY,
-    petani_kopi_id_petani INT NOT NULL REFERENCES petani_kopi(id_petani),
-    data_penanaman_id_penanaman INT NOT NULL REFERENCES data_penanaman(id_penanaman),
-    kopi_id_kopi INT REFERENCES kopi(id_kopi)
-);
+ALTER TABLE feedback
+    ADD CONSTRAINT feedback_admin_fk FOREIGN KEY (id_admin)
+    REFERENCES admins(id_admin);
 
--- ========================
--- FOREIGN KEY BIKIN BELAKANGAN UNTUK RELASI MELINGKAR
--- ========================
+ALTER TABLE feedback
+    ADD CONSTRAINT feedback_harian_fk FOREIGN KEY (id_harian)
+    REFERENCES data_harian(id_harian);
 
-ALTER TABLE orders
-    ADD CONSTRAINT fk_orders_transaksi
-    FOREIGN KEY (transaksi_id_transaksi)
-    REFERENCES transaksi(id_transaksi);
-
-ALTER TABLE transaksi
-    ADD CONSTRAINT fk_transaksi_orders
-    FOREIGN KEY (orders_id_order)
-    REFERENCES orders(id_order);
-
-INSERT INTO roles (nama_role) VALUES
-('admin'),
+INSERT INTO roles (nama_role)
+VALUES ('admin'),
 ('petani'),
 ('pembeli')
 
-INSERT INTO akun (role_id_role, username, passwords)
+INSERT INTO akun (id_role, username, passwords)
 VALUES (1, 'admin', '123')
 RETURNING id_akun;
 
-INSERT INTO admins (nama, no_telp, akun_id_akun)
+INSERT INTO admins (nama, no_telp, id_akun)
 VALUES ('Budi', '08123456789',1);
