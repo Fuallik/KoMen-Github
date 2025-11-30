@@ -10,9 +10,9 @@ import questionary
 
 current_user_id = None
 
-###########STYLES##############
+########### STYLES ##############
 
-COFFEE    = "\033[38;5;94m"   # warna coklat kopi (main menu)
+COFFEE    = "\033[38;5;94m"   # warna coklat kopi (menu & judul)
 RESET     = "\033[0m"
 HIGHLIGHT = "\033[7m"         # highlight baris aktif
 
@@ -45,10 +45,11 @@ def menu_kopi(title: str, options: list[str]) -> int:
             else:
                 first_render = False
 
-            raw_lines = [f"{i+1}. {opt}" for i, opt in enumerate(options)]
+            # TIDAK pake angka lagi, cuma teks option
+            raw_lines = [opt for opt in options]
             lines = []
             for i, line in enumerate(raw_lines):
-                prefix = "▶" if i == selected else " "
+                prefix = "▶" if i == selected else " "   # arrow di opsi terpilih
                 lines.append(f"{prefix} {line}")
 
             max_len = max(len(line) for line in lines)
@@ -69,7 +70,7 @@ def menu_kopi(title: str, options: list[str]) -> int:
             # isi menu
             for i, line in enumerate(lines):
                 if i == selected:
-                    # baris terpilih: reverse + warna kopi
+                    # baris terpilih: background abu, teks tetap warna kopi
                     inner = HIGHLIGHT + COFFEE + line.ljust(width-2) + RESET
                 else:
                     # baris biasa: teks warna kopi
@@ -86,6 +87,7 @@ def menu_kopi(title: str, options: list[str]) -> int:
             print("↑/↓ : pilih menu   Enter : OK", flush=True)
 
             # ===== baca tombol =====
+            import msvcrt
             key = msvcrt.getch()
 
             if key == b'\xe0':  # arrow keys
@@ -105,14 +107,15 @@ def menu_kopi(title: str, options: list[str]) -> int:
         # tampilkan lagi kursor
         print("\033[?25h", end="")
 
-init(autoreset=True)  # colorama
+# inisialisasi colorama
+init(autoreset=True)
 
 TITLE = Fore.LIGHTYELLOW_EX + Style.BRIGHT
 INFO  = Fore.LIGHTWHITE_EX
 ERROR = Fore.LIGHTRED_EX
 
 def banner_komen():
-    """Banner besar sekali, dipanggil misalnya di awal KoMen()."""
+    """Banner besar di awal program."""
     os.system("cls")
     text = pyfiglet.figlet_format("KoMen", font="slant")
     print(COFFEE + text + RESET)
@@ -131,14 +134,12 @@ def info(text: str):
 def warn(text: str):
     print(ERROR + f"[!] {text}" + RESET)
 
-
 def print_df_kopi(df: pd.DataFrame, title: str | None = None):
     """
     Cetak DataFrame dengan tema kopi:
       - Border tabel warna kuning
       - Teks isi tabel warna putih
       - Bentuk tabel rounded_outline (tabulate)
-    Tidak mengubah warna main menu, karena selalu diakhiri RESET.
     """
     if df is None or df.empty:
         print("Tabel kosong.")
@@ -152,11 +153,9 @@ def print_df_kopi(df: pd.DataFrame, title: str | None = None):
         print(f"│ {title} │")
         print(f"╰{bar}╯" + RESET)
 
-    # index mulai dari 1
     df_show = df.copy()
     df_show.index = range(1, len(df_show) + 1)
 
-    # tabel mentah dari tabulate
     raw = tabulate(
         df_show,
         headers="keys",
@@ -164,10 +163,8 @@ def print_df_kopi(df: pd.DataFrame, title: str | None = None):
         showindex=True
     )
 
-    # karakter border yang akan dikasih warna kuning
     border_chars = "╭╮╰╯│├┤┬┴┼─═"
 
-    # warnai setiap karakter
     for line in raw.splitlines():
         buf = []
         for ch in line:
@@ -177,11 +174,18 @@ def print_df_kopi(df: pd.DataFrame, title: str | None = None):
                 buf.append(TABLE_TEXT + ch + RESET)
         print("".join(buf))
 
+########### DATABASE TOOLS ##############
+
 def connectDB():
     try:
-        conn = psycopg2.connect(host="localhost", port="5432", user="postgres", password="123", dbname="KoMen")
+        conn = psycopg2.connect(
+            host="localhost",
+            port="5432",
+            user="postgres",
+            password="123",
+            dbname="KoMen"
+        )
         cur = conn.cursor()
-        #print("mantap")
         return conn, cur
     except Exception:
         print("Koneksi gagal")
@@ -217,7 +221,6 @@ def updateProduct(nama, id_admin):
         query_update = "UPDATE admins SET nama = %s WHERE id_admin = %s"
         cur.execute(query_update, (nama, id_admin))
         conn.commit()
-        #getAllProduct()
         print("UDAH KEGANTI BOS")
         conn.close()
     except Exception:
@@ -237,10 +240,11 @@ def login(username, password):
 
         id_akun, role = data
 
-        nama_role = {1: "admin", 
-                    2: "petani", 
-                    3: "pembeli"
-                }.get(role, "unknown")
+        nama_role = {
+            1: "admin",
+            2: "petani",
+            3: "pembeli"
+        }.get(role, "unknown")
 
         return id_akun, nama_role
     except Exception:
@@ -254,12 +258,8 @@ def getAllProduct():
 
         cur.execute(query_select)
         data = cur.fetchall()
-        #for row in data:
-        #    print(row)
         data = pd.DataFrame(data, columns=["id admin", "nama", "no telepon"])
-        data.index += 1 #memulai index dari 1
-        data.drop(columns=[""], inplace=True) #menghapus kolom
-        print(data)
+        print_df_kopi(data, "DATA ADMIN (RAW)")
         conn.close()
     except Exception:
         print("Terjadi kesalahan di fungsi getAllProduct")
@@ -268,8 +268,14 @@ def getAllProduct():
 def lihatPenanaman(id_petani):
     conn, cur = connectDB()
     query = """
-        SELECT p.id_penanaman, p.jenis_kopi, p.kuantitas, p.tanggal_penanaman, p.deskripsi, d.id_petani
-        FROM data_penanaman p JOIN detail_petani d ON (p.id_penanaman = d.id_penanaman) 
+        SELECT p.id_penanaman,
+               p.jenis_kopi,
+               p.kuantitas,
+               p.tanggal_penanaman,
+               p.deskripsi,
+               d.id_petani
+        FROM data_penanaman p
+        JOIN detail_petani d ON (p.id_penanaman = d.id_penanaman) 
         WHERE id_petani = %s
         ORDER BY id_penanaman ASC
     """
@@ -281,14 +287,23 @@ def lihatPenanaman(id_petani):
         conn.close()
         return
 
-    dataFrame = pd.DataFrame(data, columns=["ID Penanaman", "Jenis Kopi", "Kuantitas", "Tanggal Penanaman", "Deskripsi", "ID Kopi"])
-    dataFrame.index += 1
-    print("\n=== DATA PENANAMAN ===")
-    print(dataFrame)
+    dataFrame = pd.DataFrame(
+        data,
+        columns=[
+            "ID Penanaman",
+            "Jenis Kopi",
+            "Kuantitas",
+            "Tanggal Penanaman",
+            "Deskripsi",
+            "ID Petani"
+        ]
+    )
+
+    print_df_kopi(dataFrame, "DATA PENANAMAN")
     conn.close()
 
+#################### ADMIN ####################
 
-####################ADMIN####################
 def addAdmin():
     conn, cur = connectDB()
 
@@ -300,13 +315,18 @@ def addAdmin():
         nama     = input("Nama Admin Baru      : ").title()
         no_telp  = input("Nomor Telepon        : ")
 
-        query_insert = "INSERT INTO akun(username, passwords, id_role) VALUES(%s, %s, 1) RETURNING id_akun"
+        query_insert = """
+            INSERT INTO akun (username, passwords, id_role)
+            VALUES (%s, %s, 1) RETURNING id_akun
+        """
         cur.execute(query_insert, (username, pw))
         id_akun_baru = cur.fetchone()[0]
             
-        query_insertAd = """INSERT INTO admins (nama, no_telp, id_akun) 
-        VALUES(%s, %s, %s)"""
-        cur.execute (query_insertAd, (nama, no_telp, id_akun_baru))
+        query_insertAd = """
+            INSERT INTO admins (nama, no_telp, id_akun)
+            VALUES (%s, %s, %s)
+        """
+        cur.execute(query_insertAd, (nama, no_telp, id_akun_baru))
 
         conn.commit()
 
@@ -329,16 +349,16 @@ def addAdmin():
 def delAdmin():
     conn, cur = connectDB()
     while True:
-        print("===HAPUS AKUN ADMIN===")
+        section_title("HAPUS AKUN ADMIN")
         lihatAkunAdmin()
 
-        username = input("Masukkan Username Admin = ")
+        username = input("Masukkan Username Admin : ")
         query_akun = "SELECT id_akun FROM akun WHERE username = %s AND id_role = 1"
         cur.execute(query_akun, (username,))
         data = cur.fetchone()
 
         if not data:
-            print("Akun Admin Tidak Ditemukan!")
+            warn("Akun Admin Tidak Ditemukan!")
             return
 
         id_akun = data[0]
@@ -350,76 +370,91 @@ def delAdmin():
         cur.execute(query_dropAkun, (id_akun,))
 
         conn.commit()
-        print(f"Akun Admin {username} Telah Dihapus!")
+        info(f"Akun Admin {username} Telah Dihapus!")
 
-        pilihan = input("Apakah Ingin Melanjutkan Menghapus Akun Admin ? [y/n] : ").lower()
+        pilihan = input("Hapus akun admin lain? [y/n]: ").lower()
         if pilihan == "y":
             continue
         elif pilihan == "n":
             break
         else:
-            print("Pilihan Invalid!")
+            warn("Pilihan Invalid!")
 
-        conn.close()
+    conn.close()
 
 def addPetani():
     conn, cur = connectDB()
 
     while True:
-        print("===TAMBAH AKUN PETANI===")
-        username = input("Masukkan Username Petani Baru = ")
-        pw = input("Masukkan Password Petani Baru = ")
-        nama = input("Masukkan Nama Petani Baru = ").title()
-        alamat = input("Masukkan Alamat Petani Baru = ").title()
-        lurah = input("Masukkan Kelurahan Petani Baru = ").title()
-        camat = input("Masukkan Kecamatan Petani Baru = ").title()
-        no_telp = input("Masukkan Nomer Telepon = ")
+        section_title("TAMBAH AKUN PETANI")
 
-        query_insert = "INSERT INTO akun(username, passwords, id_role) VALUES(%s, %s, 2) RETURNING id_akun"
+        username = input("Masukkan Username Petani Baru : ")
+        pw       = input("Masukkan Password Petani Baru : ")
+        nama     = input("Masukkan Nama Petani Baru     : ").title()
+        alamat   = input("Masukkan Alamat Petani Baru   : ").title()
+        lurah    = input("Masukkan Kelurahan Petani     : ").title()
+        camat    = input("Masukkan Kecamatan Petani     : ").title()
+        no_telp  = input("Masukkan Nomor Telepon        : ")
+
+        query_insert = """
+            INSERT INTO akun(username, passwords, id_role)
+            VALUES(%s, %s, 2) RETURNING id_akun
+        """
         cur.execute(query_insert, (username, pw))
         id_akun_baru = cur.fetchone()[0]
         
-        query_checkCamat = """SELECT id_kecamatan FROM kecamatan
-        WHERE LOWER(nama_kecamatan) = LOWER(%s)"""
+        query_checkCamat = """
+            SELECT id_kecamatan FROM kecamatan
+            WHERE LOWER(nama_kecamatan) = LOWER(%s)
+        """
         cur.execute(query_checkCamat, (camat,))
         hasil = cur.fetchone()
 
         if hasil:
             id_kecamatan = hasil[0]
         else:
-            query_insertCamat = """INSERT INTO kecamatan (nama_kecamatan)
-            VALUES (%s) RETURNING id_kecamatan"""
+            query_insertCamat = """
+                INSERT INTO kecamatan (nama_kecamatan)
+                VALUES (%s) RETURNING id_kecamatan
+            """
             cur.execute(query_insertCamat, (camat,))
             id_kecamatan = cur.fetchone()[0]
 
-        query_checkLurah = """SELECT id_kelurahan FROM kelurahan
-        WHERE LOWER(nama_kelurahan) = LOWER(%s) AND id_kecamatan = %s"""
+        query_checkLurah = """
+            SELECT id_kelurahan FROM kelurahan
+            WHERE LOWER(nama_kelurahan) = LOWER(%s)
+              AND id_kecamatan = %s
+        """
         cur.execute(query_checkLurah, (lurah, id_kecamatan))
         hasilKel = cur.fetchone()
 
         if hasilKel:
             id_kelurahan = hasilKel[0]
         else:
-            query_insertLurah = """INSERT INTO kelurahan (nama_kelurahan, id_kecamatan)
-            VALUES (%s, %s) RETURNING id_kelurahan"""
+            query_insertLurah = """
+                INSERT INTO kelurahan (nama_kelurahan, id_kecamatan)
+                VALUES (%s, %s) RETURNING id_kelurahan
+            """
             cur.execute(query_insertLurah, (lurah, id_kecamatan))
             id_kelurahan = cur.fetchone()[0]
             
-        query_insertPet = """INSERT INTO petani_kopi (nama, no_telp, alamat, id_akun, id_kelurahan) 
-        VALUES(%s, %s, %s, %s, %s)"""
-        cur.execute (query_insertPet, (nama, no_telp, alamat, id_akun_baru, id_kelurahan))
+        query_insertPet = """
+            INSERT INTO petani_kopi (nama, no_telp, alamat, id_akun, id_kelurahan) 
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cur.execute(query_insertPet, (nama, no_telp, alamat, id_akun_baru, id_kelurahan))
 
         conn.commit()
 
-        print("Akun Petani Baru Telah Ditambahkan!")
+        info("Akun Petani Baru Telah Ditambahkan!")
 
-        pilihan = input("Apakah Ingin Melanjutkan Menambah Akun Petani Baru ? [y/n]").lower()
+        pilihan = input("Tambah akun petani lain? [y/n]: ").lower()
         if pilihan == "y":
             continue
         elif pilihan == "n":
             break
         else:
-            print("Pilihan Invalid!")
+            warn("Pilihan Invalid!")
         
         conn.close()
         return id_akun_baru
@@ -427,16 +462,16 @@ def addPetani():
 def delPetani():
     conn, cur = connectDB()
     while True:
-        print("===HAPUS AKUN PETANI===")
+        section_title("HAPUS AKUN PETANI")
         lihatAkunPetani()
 
-        username = input("Masukkan Username Petani = ")
+        username = input("Masukkan Username Petani : ")
         query_akun = "SELECT id_akun FROM akun WHERE username = %s AND id_role = 2"
         cur.execute(query_akun, (username,))
         data = cur.fetchone()
 
         if not data:
-            print("Akun Petani Tidak Ditemukan!")
+            warn("Akun Petani Tidak Ditemukan!")
             return
 
         id_akun = data[0]
@@ -448,48 +483,69 @@ def delPetani():
         cur.execute(query_dropAkun, (id_akun,))
 
         conn.commit()
-        print(f"Akun Petani {username} Telah Dihapus!")
+        info(f"Akun Petani {username} Telah Dihapus!")
 
-        pilihan = input("Apakah Ingin Melanjutkan Menghapus Akun Petani Baru ? [y/n] : ").lower()
+        pilihan = input("Hapus akun petani lain? [y/n]: ").lower()
         if pilihan == "y":
             continue
         elif pilihan == "n":
             break
         else:
-            print("Pilihan Invalid!")
+            warn("Pilihan Invalid!")
 
-        conn.close()
+    conn.close()
 
-def lihatDataHari(): #admin
+def lihatDataHari():  # admin
     conn, cur = connectDB()
-    query = """SELECT dh.id_harian, dh.tanggal_penanaman, dp.jenis_kopi, dh.deskripsi, dp.id_penanaman, dpt.id_petani
-    FROM data_harian dh JOIN data_penanaman dp ON (dh.id_penanaman = dp.id_penanaman)
-    JOIN detail_petani dpt ON (dp.id_penanaman = dpt.id_penanaman)
-    ORDER BY id_harian ASC
+    query = """
+        SELECT dh.id_harian,
+               dh.tanggal_penanaman,
+               dp.jenis_kopi,
+               dh.deskripsi,
+               dp.id_penanaman,
+               dpt.id_petani
+        FROM data_harian dh
+        JOIN data_penanaman dp ON (dh.id_penanaman = dp.id_penanaman)
+        JOIN detail_petani dpt ON (dp.id_penanaman = dpt.id_penanaman)
+        ORDER BY id_harian ASC
     """
     cur.execute(query)
     data = cur.fetchall()
 
-    print("\n===DATA HARIAN===")
     if not data:
-        print("Belum Ada Data Perkembangan Dari Petani\n")
+        print("\nBelum Ada Data Perkembangan Dari Petani\n")
         conn.close()
         return
     
-    dataFrame = pd.DataFrame(data, columns=["ID Harian", "Tanggal Penanaman", "Jenis Kopi", "Deskripsi", "ID Penanaman", "ID Petani"])
-    dataFrame.index += 1
+    dataFrame = pd.DataFrame(
+        data,
+        columns=[
+            "ID Harian",
+            "Tanggal Penanaman",
+            "Jenis Kopi",
+            "Deskripsi",
+            "ID Penanaman",
+            "ID Petani"
+        ]
+    )
 
-    print(dataFrame)
-
+    print_df_kopi(dataFrame, "DATA HARIAN")
     conn.close()
 
-def stokKopi(): #Admin, Petani, Pembeli
+def stokKopi():  # Admin, Petani, Pembeli
     conn, cur = connectDB()
 
-    query = """SELECT k.id_kopi, jk.jenis_kopi, k.kualitas, k.harga, k.jumlah_stok, k.deskripsi
-    FROM kopi k JOIN jenis_kopi jk ON (jk.id_jenis_kopi = k.id_jenis_kopi)
-    ORDER BY id_kopi ASC"""
-    
+    query = """
+        SELECT k.id_kopi,
+               jk.jenis_kopi,
+               k.kualitas,
+               k.harga,
+               k.jumlah_stok,
+               k.deskripsi
+        FROM kopi k
+        JOIN jenis_kopi jk ON (jk.id_jenis_kopi = k.id_jenis_kopi)
+        ORDER BY id_kopi ASC
+    """
     cur.execute(query)
     data = cur.fetchall()
 
@@ -500,11 +556,17 @@ def stokKopi(): #Admin, Petani, Pembeli
 
     dataFrame = pd.DataFrame(
         data,
-        columns=["ID Kopi", "Jenis Kopi", "Kualitas", "Harga", "Jumlah Stok", "Deskripsi"]
+        columns=[
+            "ID Kopi",
+            "Jenis Kopi",
+            "Kualitas",
+            "Harga",
+            "Jumlah Stok",
+            "Deskripsi"
+        ]
     )
 
     print_df_kopi(dataFrame, "STOK KOPI TERSEDIA")
-
     conn.close()
 
 def verifikasiStok():
@@ -520,12 +582,14 @@ def verifikasiStok():
     while True:
         conn, cur = connectDB()
 
-        print("\n===DAFTAR PENGAJUAN STOK (STATUS: pending)===")
+        section_title("DAFTAR PENGAJUAN STOK (STATUS: pending)")
         query_pending = """
             SELECT v.id_verifikasi, p.nama, v.status_verifikasi, v.tanggal_terverifikasi    
-            FROM verifikasi v JOIN petani_kopi p ON v.id_petani = p.id_petani
+            FROM verifikasi v
+            JOIN petani_kopi p ON v.id_petani = p.id_petani
             WHERE v.status_verifikasi = 'pending'
-            ORDER BY v.id_verifikasi ASC"""
+            ORDER BY v.id_verifikasi ASC
+        """
         cur.execute(query_pending)
         rows = cur.fetchall()
 
@@ -533,10 +597,14 @@ def verifikasiStok():
             print("Tidak ada pengajuan stok yang sedang pending.")
             conn.close()
             return
-        
-        for row in rows:
-            id_verifikasi, nama_petani, status, tgl = row
-            print(f"ID Verifikasi: {id_verifikasi} | Petani: {nama_petani} | Status: {status}")
+
+        # ====== TABEL PENDING (3 kolom) ======
+        pending_for_table = [(r[0], r[1], r[2]) for r in rows]  # id_ver, nama, status
+        df_pending = pd.DataFrame(
+            pending_for_table,
+            columns=["ID Verifikasi", "Nama Petani", "Status"]
+        )
+        print_df_kopi(df_pending, "DAFTAR PENGAJUAN STOK (PENDING)")
 
         try:
             pilih = int(input("\nMasukkan ID verifikasi yang ingin diproses (0 untuk kembali): "))
@@ -550,8 +618,18 @@ def verifikasiStok():
             break
         
         query_detail = """
-            SELECT v.id_verifikasi, p.nama, d.id_detail_verifikasi, d.id_kopi, jk.jenis_kopi, d.kuantitas, d.jenis_kopi_baru, d.deskripsi_baru, d.harga_baru, d.kualitas_baru
-            FROM detail_verifikasi d JOIN verifikasi v ON d.id_verifikasi = v.id_verifikasi
+            SELECT v.id_verifikasi,
+                   p.nama,
+                   d.id_detail_verifikasi,
+                   d.id_kopi,
+                   jk.jenis_kopi,
+                   d.kuantitas,
+                   d.jenis_kopi_baru,
+                   d.deskripsi_baru,
+                   d.harga_baru,
+                   d.kualitas_baru
+            FROM detail_verifikasi d
+            JOIN verifikasi v ON d.id_verifikasi = v.id_verifikasi
             JOIN petani_kopi p ON v.id_petani = p.id_petani
             LEFT JOIN kopi k ON k.id_kopi = d.id_kopi
             LEFT JOIN jenis_kopi jk ON (jk.id_jenis_kopi = k.id_jenis_kopi)
@@ -565,45 +643,64 @@ def verifikasiStok():
             conn.close()
             continue
 
-        print("\n=== DETAIL PENGAJUAN ===")
-        for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama, qty, jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
+        # ====== TABEL DETAIL (4 kolom: ID, Jenis Kopi, Tambah Stok, Oleh) ======
+        detail_rows = []
+        detail_kopi_lama = []
+        for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama,
+             qty, jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
             if id_kopi is not None:
-                print(f"[KOPI LAMA] ID {id_kopi} - {jenis_kopi_lama} | +{qty} | oleh {nama_petani}")
+                # kopi lama
+                detail_kopi_lama.append({
+                    "ID": id_kopi,
+                    "Jenis Kopi": jenis_kopi_lama,
+                    "Tambah Stok": f"+{qty}",
+                    "Diajukan Oleh": nama_petani
+                })
+                df_detail = pd.DataFrame(detail_kopi_lama, columns=["ID","Jenis Kopi","Tambah Stok","Diajukan Oleh"])
+                print_df_kopi(df_detail, "DETAIL PENGAJUAN STOK LAMA")
             else:
-                print("[KOPI BARU]")
-                print(f"  Jenis     : {jenis_baru}")
-                print(f"  Deskripsi : {desk_baru}")
-                print(f"  Harga     : {harga_baru}")
-                print(f"  Stok awal : {qty}")
-                print(f"  Kualitas  : {kualitas_baru}")
-                print(f"  Diajukan oleh: {nama_petani}")
+                # kopi baru → tampilkan jenis baru & stok awal
+                detail_rows.append({
+                    "Jenis Kopi": jenis_baru,
+                    "Deskripsi" : desk_baru,
+                    "Harga"     : harga_baru,
+                    "Stok Awal": qty,
+                    "Kualitas" : kualitas_baru,
+                    "Diajukan Oleh": nama_petani
+                })
+                df_detail = pd.DataFrame(detail_rows, columns=["Jenis Kopi","Deskripsi","Harga","Stok Awal","Kualitas", "Diajukan Oleh"])
+                print_df_kopi(df_detail, "DETAIL PENGAJUAN STOK BARU")
+
+
+        
+        # ====== TAMPILAN LAMA TETAP ADA (persis punyamu) ======
+        print("\n=== DETAIL PENGAJUAN ===")
 
         keputusan = input("\nSetujui pengajuan ini? [y/n] : ").lower()
 
         if keputusan == "y":
-            for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama, qty, 
-            jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
+            for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama, qty,
+                 jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
 
                 if id_kopi is not None:
-
                     cur.execute(
                         "UPDATE kopi SET jumlah_stok = jumlah_stok + %s WHERE id_kopi = %s",
                         (qty, id_kopi)
                     )
                 else:
-
                     cur.execute("""
                         INSERT INTO jenis_kopi (jenis_kopi)
                         VALUES (%s)
-                        RETURNING id_jenis_kopi""", (jenis_baru,))
+                        RETURNING id_jenis_kopi
+                    """, (jenis_baru,))
                     new_jenis_kopi = cur.fetchone()[0]
 
                     cur.execute("""
                         INSERT INTO kopi (id_jenis_kopi, deskripsi, harga, jumlah_stok, kualitas)
                         VALUES (%s, %s, %s, %s, %s)
-                        RETURNING id_kopi""", (new_jenis_kopi, desk_baru, harga_baru, qty, kualitas_baru))
+                        RETURNING id_kopi
+                    """, (new_jenis_kopi, desk_baru, harga_baru, qty, kualitas_baru))
                     new_id_kopi = cur.fetchone()[0]
-
 
                     cur.execute("""
                         UPDATE detail_verifikasi
@@ -613,8 +710,11 @@ def verifikasiStok():
 
             cur.execute("""
                 UPDATE verifikasi
-                SET status_verifikasi = 'disetujui', id_admin = %s, tanggal_terverifikasi = CURRENT_DATE
-                WHERE id_verifikasi = %s""", (id_admin, pilih))
+                SET status_verifikasi = 'disetujui',
+                    id_admin = %s,
+                    tanggal_terverifikasi = CURRENT_DATE
+                WHERE id_verifikasi = %s
+            """, (id_admin, pilih))
 
             conn.commit()
             print("Pengajuan telah DISETUJUI. Stok kopi sudah diperbarui / kopi baru sudah dibuat.")
@@ -622,8 +722,11 @@ def verifikasiStok():
         elif keputusan == "n":
             cur.execute("""
                 UPDATE verifikasi
-                SET status_verifikasi = 'ditolak', id_admin = %s, tanggal_terverifikasi = CURRENT_DATE
-                WHERE id_verifikasi = %s""", (id_admin, pilih))
+                SET status_verifikasi = 'ditolak',
+                    id_admin = %s,
+                    tanggal_terverifikasi = CURRENT_DATE
+                WHERE id_verifikasi = %s
+            """, (id_admin, pilih))
 
             conn.commit()
             print("Pengajuan telah DITOLAK. Stok kopi tidak berubah.")
@@ -637,19 +740,19 @@ def verifikasiStok():
         if lanjut != "y":
             break
 
-def feedback(id_admin): #Admin
+def feedback(id_admin):  # Admin
     conn, cur = connectDB()
-    global admins_id_admin 
-
-    print("=== FEEDBACK ADMIN ===")
+    section_title("FEEDBACK ADMIN")
     lihatDataHari()
     
-    id_data_harian = input("Masukkan ID Data Harian = ")
-    catatan_feedback = input("Masukkan Feedback = ")
+    id_data_harian   = input("Masukkan ID Data Harian : ")
+    catatan_feedback = input("Masukkan Feedback       : ")
 
-    query = """INSERT INTO feedback (id_admin, id_harian, tanggal_feedback, catatan_feedback)
-    VALUES (%s, %s, CURRENT_DATE, %s)
-    RETURNING id_feedback"""
+    query = """
+        INSERT INTO feedback (id_admin, id_harian, tanggal_feedback, catatan_feedback)
+        VALUES (%s, %s, CURRENT_DATE, %s)
+        RETURNING id_feedback
+    """
 
     cur.execute(query, (id_admin, id_data_harian, catatan_feedback))
 
@@ -657,17 +760,19 @@ def feedback(id_admin): #Admin
     conn.commit()
     conn.close()
 
-    print("Feedback berhasil dikirim!")
+    info("Feedback berhasil dikirim!")
     print(f"ID Feedback : {id_feedback_baru}")
 
-####################PETANI####################
+#################### PETANI ####################
+
 def dataPenanaman(id_petani):
     conn, cur = connectDB()
 
-    print("===INPUT DATA PENANAMAN===")
-    print("1. Pakai jenis kopi yang SUDAH ADA di tabel kopi")
-    print("2. Catat JENIS KOPI BARU (belum ada di tabel kopi)")
-    pilihan = int(input("Pilih [1/2] : "))
+    # menu pakai arrow
+    pilihan = menu_kopi("INPUT DATA PENANAMAN", [
+        "Pakai jenis kopi yang SUDAH ADA di tabel kopi",
+        "Catat JENIS KOPI BARU (belum ada di tabel kopi)"
+    ])
 
     jenis_kopi = input("Masukkan Jenis Kopi : ").title()
     tanggal_penanaman = input("Masukkan Tanggal Penanaman (YYYY-MM-DD) : ")
@@ -722,36 +827,37 @@ def dataPenanaman(id_petani):
 def dataHari(id_petani):
     conn, cur = connectDB()
 
-    print("===INPUT DATA PERKEMBANGAN TANAMAN===")
+    section_title("INPUT DATA PERKEMBANGAN TANAMAN")
     lihatPenanaman(id_petani)
 
     id_penanaman = input("Masukkan ID Penanaman yang ingin ditambahkan perkembangan: ")
 
-    query_check = """SELECT p.id_penanaman, dp.id_kopi FROM data_penanaman p
-    JOIN detail_petani dp ON (p.id_penanaman = dp.id_penanaman)
-    WHERE p.id_penanaman = %s AND dp.id_petani = %s"""
-    
+    query_check = """
+        SELECT p.id_penanaman, dp.id_kopi
+        FROM data_penanaman p
+        JOIN detail_petani dp ON (p.id_penanaman = dp.id_penanaman)
+        WHERE p.id_penanaman = %s AND dp.id_petani = %s
+    """
     cur.execute(query_check, (id_penanaman, id_petani))
     if not cur.fetchone():
         print("ID penanaman tidak ditemukan atau bukan milik Anda!")
         conn.close()
         return
     
-    print("=== DATA PENANAMAN ANDA ===")
-
     deskripsi = input("Masukkan deskripsi perkembangan: ")
-    tanggal = datetime.now()
+    tanggal   = datetime.now()
     
-    query_insert = """INSERT INTO data_harian (id_penanaman, tanggal_penanaman, deskripsi)
-    VALUES (%s, %s, %s)"""
+    query_insert = """
+        INSERT INTO data_harian (id_penanaman, tanggal_penanaman, deskripsi)
+        VALUES (%s, %s, %s)
+    """
     cur.execute(query_insert, (id_penanaman, tanggal, deskripsi))
 
     conn.commit()
     conn.close()
-    print("\nPerkembangan berhasil ditambahkan!\n")
+    info("Perkembangan berhasil ditambahkan!")
 
 def ajuStok():
-    conn, cur = connectDB()
     global current_user_id
 
     id_akun_petani = current_user_id
@@ -762,16 +868,17 @@ def ajuStok():
         return
 
     while True:
-        print("\n=== PENGAJUAN STOK KOPI ===")
-        print("1. Ajukan stok kopi yang SUDAH ADA")
-        print("2. Ajukan kopi JENIS BARU")
-        print("3. Kembali ke menu sebelumnya")
-        pilihan = int(input("Pilih [1/2/3]: "))
+        # ===== MENU PAKAI ARROW =====
+        pilihan = menu_kopi("PENGAJUAN STOK KOPI", [
+            "Ajukan stok kopi yang SUDAH ADA",
+            "Ajukan kopi JENIS BARU",
+            "Kembali ke menu sebelumnya"
+        ])
 
-        
+        # 1. Pengajuan stok kopi yang sudah ada
         if pilihan == 1:
             conn, cur = connectDB()
-            print("===PENGAJUAN STOK KOPI===")
+            section_title("PENGAJUAN STOK KOPI - KOPI LAMA")
             stokKopi()
 
             try:
@@ -788,7 +895,15 @@ def ajuStok():
                 conn.close()
                 continue
 
-            cur.execute("SELECT j.jenis_kopi, k.id_kopi FROM jenis_kopi j JOIN kopi k ON j.id_jenis_kopi = k.id_jenis_kopi WHERE id_kopi = %s", (id_kopi,))
+            cur.execute(
+                """
+                SELECT j.jenis_kopi, k.id_kopi
+                FROM jenis_kopi j
+                JOIN kopi k ON j.id_jenis_kopi = k.id_jenis_kopi
+                WHERE k.id_kopi = %s
+                """,
+                (id_kopi,)
+            )
             row = cur.fetchone()
             if not row:
                 print("ID kopi tidak ditemukan!")
@@ -800,13 +915,17 @@ def ajuStok():
                     continue
 
             query_verifikasi = """
-            INSERT INTO verifikasi (id_admin, id_petani, status_verifikasi, tanggal_terverifikasi)
-            VALUES (NULL, %s, 'pending', NULL)
-            RETURNING id_verifikasi"""
+                INSERT INTO verifikasi (id_admin, id_petani, status_verifikasi, tanggal_terverifikasi)
+                VALUES (NULL, %s, 'pending', NULL)
+                RETURNING id_verifikasi
+            """
             cur.execute(query_verifikasi, (id_petani,))
             id_verifikasi = cur.fetchone()[0]
-            query_detail = """INSERT INTO detail_verifikasi (kuantitas, id_verifikasi, id_kopi)
-            VALUES (%s, %s, %s)"""
+
+            query_detail = """
+                INSERT INTO detail_verifikasi (kuantitas, id_verifikasi, id_kopi)
+                VALUES (%s, %s, %s)
+            """
             cur.execute(query_detail, (kuantitas, id_verifikasi, id_kopi))
 
             conn.commit()
@@ -815,30 +934,37 @@ def ajuStok():
             print(f"Pengajuan stok berhasil dikirim dengan ID verifikasi {id_verifikasi}.")
             print("Status: pending, menunggu persetujuan admin.\n")
 
+        # 2. Pengajuan kopi jenis baru
         elif pilihan == 2:
             conn, cur = connectDB()
 
-            print("\n=== PENGAJUAN KOPI JENIS BARU ===")
+            section_title("PENGAJUAN KOPI JENIS BARU")
             jenis_kopi = input("Masukkan Jenis Kopi Baru   : ").capitalize()
-            deskripsi = input("Masukkan Deskripsi Kopi    : ")
+            deskripsi  = input("Masukkan Deskripsi Kopi    : ")
             try:
-                harga = int(input("Masukkan Harga Kopi        : "))
+                harga     = int(input("Masukkan Harga Kopi        : "))
                 kuantitas = int(input("Masukkan Jumlah Stok Awal  : "))
             except ValueError:
                 print("Harga dan kuantitas harus berupa angka!")
                 conn.close()
                 continue
             kualitas = input("Masukkan Kualitas Kopi     : ").capitalize()
+
             query_verifikasi = """
                 INSERT INTO verifikasi (id_admin, id_petani, status_verifikasi, tanggal_terverifikasi)
                 VALUES (NULL, %s, 'pending', NULL)
-                RETURNING id_verifikasi"""
+                RETURNING id_verifikasi
+            """
             cur.execute(query_verifikasi, (id_petani,))
             id_verifikasi = cur.fetchone()[0]
 
             query_detail = """
-                INSERT INTO detail_verifikasi (kuantitas, id_verifikasi, id_kopi, jenis_kopi_baru, deskripsi_baru, harga_baru, kualitas_baru)
-                VALUES (%s, %s, NULL, %s, %s, %s, %s)"""
+                INSERT INTO detail_verifikasi (
+                    kuantitas, id_verifikasi, id_kopi,
+                    jenis_kopi_baru, deskripsi_baru, harga_baru, kualitas_baru
+                )
+                VALUES (%s, %s, NULL, %s, %s, %s, %s)
+            """
             cur.execute(
                 query_detail,
                 (kuantitas, id_verifikasi, jenis_kopi, deskripsi, harga, kualitas)
@@ -849,49 +975,78 @@ def ajuStok():
 
             print(f"Pengajuan KOPI BARU berhasil dikirim dengan ID verifikasi {id_verifikasi}.")
             print("Status: pending, menunggu persetujuan admin.\n")
-        
-        elif pilihan == "3":
+
+        # 3. Kembali ke menu sebelumnya
+        elif pilihan == 3:
             break
+
         else:
             print("Pilihan tidak valid!")
 
+        # tanya mau ajukan lagi atau tidak (boleh tetap pakai y/n biasa)
         lanjut = input("Ajukan lagi? [y/n]: ").lower()
         if lanjut != "y":
             break
 
 def mail(id_petani):
     conn, cur = connectDB()
-    query_select = """SELECT f.id_feedback, f.catatan_feedback, d.id_harian, d.deskripsi, d.tanggal_penanaman, dp.id_petani
-    FROM feedback f JOIN data_harian d ON (d.id_harian = f.id_harian)
-    JOIN data_penanaman dm ON (dm.id_penanaman = d.id_penanaman)
-    JOIN detail_petani dp ON (dm.id_penanaman = dp.id_penanaman)
-    WHERE dp.id_petani = %s"""
+    query_select = """
+        SELECT f.id_feedback,
+               f.catatan_feedback,
+               d.id_harian,
+               d.deskripsi,
+               d.tanggal_penanaman,
+               dp.id_petani
+        FROM feedback f
+        JOIN data_harian d   ON (d.id_harian = f.id_harian)
+        JOIN data_penanaman dm ON (dm.id_penanaman = d.id_penanaman)
+        JOIN detail_petani dp   ON (dm.id_penanaman = dp.id_penanaman)
+        WHERE dp.id_petani = %s
+    """
 
     cur.execute(query_select, (id_petani,))
     hasil = cur.fetchall()
 
-    print("\n=== FEEDBACK UNTUK DATA HARIAN ANDA ===")
+    section_title("FEEDBACK UNTUK DATA HARIAN ANDA")
 
     if not hasil:
         print("Belum ada feedback dari admin.")
+        conn.close()
         return
 
-    df = pd.DataFrame(hasil, columns=["ID Feedback", "Catatan Feedback", "ID Harian", "Deskripsi", "Tanggal Penanaman", "ID Petani"])
-    df.index += 1
-    print(df)
+    df = pd.DataFrame(
+        hasil,
+        columns=[
+            "ID Feedback",
+            "Catatan Feedback",
+            "ID Harian",
+            "Deskripsi",
+            "Tanggal Penanaman",
+            "ID Petani"
+        ]
+    )
 
+    # TABEL PAKAI TEMA KOPI (kuning + teks putih), TANPA JUDUL KEDUA
+    print_df_kopi(df)
+    conn.close()
 
-####################PEMBELI####################
+#################### PEMBELI ####################
+
 def orderKopi():
     global current_user_id
     conn, cur = connectDB()
+
+    section_title("ORDER KOPI")
     stokKopi()
     
     id_kopi = input("Masukkan ID Kopi : ")
-    jumlah = int(input("Masukkan Jumlah : "))
-    cur.execute("""SELECT k.harga, k.jumlah_stok, jk.jenis_kopi FROM kopi k
-    JOIN jenis_kopi jk ON k.id_jenis_kopi = jk.id_jenis_kopi
-    WHERE id_kopi = %s""", (id_kopi,))
+    jumlah  = int(input("Masukkan Jumlah : "))
+    cur.execute("""
+        SELECT k.harga, k.jumlah_stok, jk.jenis_kopi
+        FROM kopi k
+        JOIN jenis_kopi jk ON k.id_jenis_kopi = jk.id_jenis_kopi
+        WHERE id_kopi = %s
+    """, (id_kopi,))
     row = cur.fetchone()
 
     if not row:
@@ -910,32 +1065,38 @@ def orderKopi():
     print(f"Total bayar untuk {jumlah} x {jenis_kopi} = {total}")
     input("Tekan Enter untuk membayar...")
 
-    status = "Lunas"
+    status  = "Lunas"
     tanggal = datetime.now()
 
-    query_insertOrders = ("""INSERT INTO orders (tanggal_order, id_transaksi, id_pembeli) 
-    VALUES (%s, NULL, %s) RETURNING id_order""")
+    query_insertOrders = """
+        INSERT INTO orders (tanggal_order, id_transaksi, id_pembeli) 
+        VALUES (%s, NULL, %s) RETURNING id_order
+    """
     cur.execute(query_insertOrders, (tanggal, current_user_id))
     id_order = cur.fetchone()[0]
 
-    query_updateKopi = ("UPDATE kopi SET jumlah_stok = jumlah_stok - %s WHERE id_kopi = %s")
+    query_updateKopi = "UPDATE kopi SET jumlah_stok = jumlah_stok - %s WHERE id_kopi = %s"
     cur.execute(query_updateKopi, (jumlah, id_kopi))
 
-    query_insertDetOrd = ("""INSERT INTO detail_order (harga, kuantitas, id_order, id_kopi)
-    VALUES (%s, %s, %s, %s)""")
+    query_insertDetOrd = """
+        INSERT INTO detail_order (harga, kuantitas, id_order, id_kopi)
+        VALUES (%s, %s, %s, %s)
+    """
     cur.execute(query_insertDetOrd, (harga, jumlah, id_order, id_kopi))
 
-    query_insertTransaksi = ("""INSERT INTO transaksi (tanggal_transaksi, status_pembayaran, id_order)
-    VALUES (%s, %s, %s) RETURNING id_transaksi""")   
+    query_insertTransaksi = """
+        INSERT INTO transaksi (tanggal_transaksi, status_pembayaran, id_order)
+        VALUES (%s, %s, %s) RETURNING id_transaksi
+    """   
     cur.execute(query_insertTransaksi, (tanggal, status, id_order))
     id_transaksi = cur.fetchone()[0]
 
-    query_updateOrders = ("UPDATE orders SET id_transaksi = %s WHERE id_order = %s")
+    query_updateOrders = "UPDATE orders SET id_transaksi = %s WHERE id_order = %s"
     cur.execute(query_updateOrders, (id_transaksi, id_order))
 
     conn.commit()
     conn.close()
-    print(f"Pembelian berhasil! Status pembayaran: {status} | Tanggal: {tanggal}\n")
+    info(f"Pembelian berhasil! Status pembayaran: {status} | Tanggal: {tanggal}")
 
 def history():
     global current_user_id
@@ -947,12 +1108,21 @@ def history():
     try:
         conn, cur = connectDB()
 
-        query_select = ("""SELECT o.id_order, k.id_kopi, od.kuantitas, od.harga, o.tanggal_order, t.status_pembayaran, (od.harga * od.kuantitas) as total
-        FROM detail_order od join orders o on (o.id_order = od.id_order)
-        join kopi k on (k.id_kopi = od.id_kopi)
-        join transaksi t on (t.id_transaksi = o.id_transaksi)
-        WHERE o.id_pembeli = %s
-        ORDER BY o.tanggal_order""")
+        query_select = """
+            SELECT o.id_order,
+                   k.id_kopi,
+                   od.kuantitas,
+                   od.harga,
+                   o.tanggal_order,
+                   t.status_pembayaran,
+                   (od.harga * od.kuantitas) as total
+            FROM detail_order od
+            JOIN orders o    ON (o.id_order = od.id_order)
+            JOIN kopi k      ON (k.id_kopi = od.id_kopi)
+            JOIN transaksi t ON (t.id_transaksi = o.id_transaksi)
+            WHERE o.id_pembeli = %s
+            ORDER BY o.tanggal_order
+        """
         cur.execute(query_select, (current_user_id,))
         data = cur.fetchall()
         conn.close()
@@ -961,16 +1131,21 @@ def history():
             print("Riwayat pembelian masih kosong.")
             return
 
-        print("=== RIWAYAT PEMBELIAN ===")
-        for row in data:
-            print(f"ID Order     : {row[0]}")
-            print(f"ID Kopi      : {row[1]}")
-            print(f"Jumlah       : {row[2]}")
-            print(f"Harga        : Rp {row[3]}")
-            print(f"Tanggal      : {row[4]}")
-            print(f"Status Bayar : {row[5]}")
-            print(f"Total        : Rp {row[6]}")
-            print("-----------------------------")
+        # BUAT DATAFRAME & TAMPILKAN DENGAN TEMA KOPI
+        df = pd.DataFrame(
+            data,
+            columns=[
+                "ID Order",
+                "ID Kopi",
+                "Jumlah",
+                "Harga",
+                "Tanggal",
+                "Status Bayar",
+                "Total"
+            ]
+        )
+
+        print_df_kopi(df, "RIWAYAT PEMBELIAN")
 
     except Exception as e:
         print("Gagal mengambil riwayat:", e)
@@ -984,13 +1159,14 @@ def addKopi(tanggal_penanaman, deskripsi):
     print('Data Telah ditambahkan')
     conn.close()
 
-def addstokKopi(): #Admin
+def addstokKopi():  # Admin
     while True:
         conn, cur = connectDB()
     
+        section_title("TAMBAH / UPDATE STOK KOPI")
         stokKopi()
-        id_kopi = int(input("Masukkan ID Kopi : "))
-        jumlah_stok = int(input("Masukkan Jumlah Stok : "))
+        id_kopi      = int(input("Masukkan ID Kopi         : "))
+        jumlah_stok  = int(input("Masukkan Jumlah Stok     : "))
     
         query_select = "SELECT jumlah_stok FROM kopi WHERE id_kopi = %s"
         cur.execute(query_select, (id_kopi,))
@@ -998,32 +1174,34 @@ def addstokKopi(): #Admin
     
         if data is None:
             print("Data Tidak Ditemukan!")
-            pilihan = input("Apalah Anda Ingin Menambah Data Baru? Pilih y/n : ")
+            pilihan = input("Apakah Anda Ingin Menambah Data Baru? [y/n]: ")
 
             if pilihan == "y":
-                print("===TAMBAH STOK BARU===")
+                section_title("TAMBAH STOK BARU")
 
-                jenis_kopi = input("Masukkan Jenis Kopi Baru : ")
-                nama_kopi = input("Masukkan Nama Kopi : ")
-                deskripsi = input("Masukkan Deskripsi Kopi : ")
-                harga = int(input("Masukkan Harga Kopi : "))
-                jumlah_stok = int(input("Masukkan Jumlah Stok Kopi : "))
-                kualitas = input("Masukkan Kualitas Kopi : ")
+                jenis_kopi   = input("Masukkan Jenis Kopi Baru : ")
+                nama_kopi    = input("Masukkan Nama Kopi       : ")
+                deskripsi    = input("Masukkan Deskripsi Kopi  : ")
+                harga        = int(input("Masukkan Harga Kopi      : "))
+                jumlah_stok  = int(input("Masukkan Jumlah Stok     : "))
+                kualitas     = input("Masukkan Kualitas Kopi   : ")
 
-                query_insert = "INSERT INTO kopi(jenis_kopi, nama_kopi, deskripsi, harga, jumlah_stok, kualitas) VALUES (%s, %s, %s, %s, %s, %s)"
+                query_insert = """
+                    INSERT INTO kopi(jenis_kopi, nama_kopi, deskripsi, harga, jumlah_stok, kualitas)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """
                 cur.execute(query_insert, (jenis_kopi, nama_kopi, deskripsi, harga, jumlah_stok, kualitas))
                 conn.commit()
                 print("Data Kopi Baru Telah Ditambah!")
                 conn.close()
 
-                pilihan = input("Apakah anda ingin melanjutkan menambah kopi? [y/n]").lower()
+                pilihan = input("Apakah anda ingin melanjutkan menambah kopi? [y/n]: ").lower()
                 if pilihan == "y":
                     continue
                 elif pilihan == "n":
                     break
                 else:
                     print("Pilihan Invalid!")
-
 
             elif pilihan == "n":
                 print("Program Penambahan Kopi Telah Dihentikan!")
@@ -1035,8 +1213,8 @@ def addstokKopi(): #Admin
         else:
             print("===UPDATE STOCK===")
             
-            id_kopi = input("Masukkan ID Kopi : ")
-            jumlah_stok = input("Masukkan Jumlah Stok : ")
+            id_kopi      = input("Masukkan ID Kopi        : ")
+            jumlah_stok  = input("Masukkan Jumlah Stok    : ")
 
             query_update = "UPDATE kopi SET jumlah_stok = jumlah_stok + %s WHERE id_kopi = %s"
             cur.execute(query_update, (jumlah_stok, id_kopi))
@@ -1057,46 +1235,59 @@ def addstokKopi(): #Admin
 def lihatAkunPetani():
     conn, cur = connectDB()
 
-    query_select = """SELECT p.id_petani, p.nama, p.id_akun, a.username FROM petani_kopi p join akun a on (p.id_akun = a.id_akun)
-    ORDER BY id_petani ASC"""
+    query_select = """
+        SELECT p.id_petani, p.nama, p.id_akun, a.username
+        FROM petani_kopi p
+        JOIN akun a ON (p.id_akun = a.id_akun)
+        ORDER BY id_petani ASC
+    """
     cur.execute(query_select)
     rows = cur.fetchall()
 
     if not rows:
         print("===DATA PETANI KOSONG===")
         return
-    df = pd.DataFrame(rows, columns=["ID Petani", "Nama Petani", "ID Akun", "Username"])
-    df.index += 1
-    print("===DATA PETANI===")
-    print(df)
+
+    df = pd.DataFrame(
+        rows,
+        columns=["ID Petani", "Nama Petani", "ID Akun", "Username"]
+    )
+    print_df_kopi(df, "DATA PETANI")
 
     conn.close()
 
 def lihatAkunAdmin():
     conn, cur = connectDB()
 
-    query_select = """SELECT a.id_admin, a.nama, a.id_akun, ak.username FROM admins a join akun ak on (a.id_akun = ak.id_akun)
-    ORDER BY id_admin ASC"""
+    query_select = """
+        SELECT a.id_admin, a.nama, a.id_akun, ak.username
+        FROM admins a
+        JOIN akun ak ON (a.id_akun = ak.id_akun)
+        ORDER BY id_admin ASC
+    """
     cur.execute(query_select)
     rows = cur.fetchall()
 
     if not rows:
         print("===DATA ADMIN KOSONG===")
         return
-    df = pd.DataFrame(rows, columns=["ID Petani", "Nama Admin", "ID Akun", "Username"])
-    df.index += 1
-    print("===DATA ADMIN===")
-    print(df)
+
+    df = pd.DataFrame(
+        rows,
+        columns=["ID Admin", "Nama Admin", "ID Akun", "Username"]
+    )
+    print_df_kopi(df, "DATA ADMIN")
 
     conn.close()
 
-def daRiPetani(): #Admin
+def daRiPetani():  # Admin
     conn, cur = connectDB()
 
-    query = """SELECT id_harian, id_penanaman, tanggal_penamanan, deskripsi
-    FROM data_harian
-    ORDER BY tanggal_penanaman ASC"""
-    
+    query = """
+        SELECT id_harian, id_penanaman, tanggal_penanaman, deskripsi
+        FROM data_harian
+        ORDER BY tanggal_penanaman ASC
+    """
     cur.execute(query)
     data = cur.fetchall()
 
@@ -1105,91 +1296,106 @@ def daRiPetani(): #Admin
         conn.close()
         return
 
-    df = pd.DataFrame(data, columns=["ID Data Harian", "ID Penanaman", "Tanggal Penanaman", "Deskripsi"])
+    df = pd.DataFrame(
+        data,
+        columns=["ID Data Harian", "ID Penanaman", "Tanggal Penanaman", "Deskripsi"]
+    )
 
-    df.index += 1
-
-    print("\n=== DATA HARIAN PETANI ===")
-    print(df)
-
+    print_df_kopi(df, "DATA HARIAN PETANI")
     conn.close()
 
-#####################MAIN####################
+##################### MAIN (REGISTER / LOGIN / MENU) ####################
 
 def mainRegister():
     conn, cur = connectDB()
 
-    print("===REGISTER===")
-    username = input("Masukkan username = ")
-    password = input("Masukkan password = ")
-    nama = input("Masukkan nama = ").title()
-    alamat = input("Masukkan alamat = ").title()
-    lurah = input("Masukkan Kelurahan Petani Baru = ").title()
-    camat = input("Masukkan Kecamatan Petani Baru = ").title()
-    no_telp = input("Masukkan no telpon aktif = ")
+    section_title("REGISTER PEMBELI")
+    username = input("Masukkan username          : ")
+    password = input("Masukkan password          : ")
+    nama     = input("Masukkan nama              : ").title()
+    alamat   = input("Masukkan alamat            : ").title()
+    lurah    = input("Masukkan Kelurahan         : ").title()
+    camat    = input("Masukkan Kecamatan         : ").title()
+    no_telp  = input("Masukkan no telpon aktif   : ")
 
-    query_insertAkun = "INSERT INTO akun (username, passwords, id_role) VALUES (%s, %s, 3) RETURNING id_akun"
+    query_insertAkun = """
+        INSERT INTO akun (username, passwords, id_role)
+        VALUES (%s, %s, 3) RETURNING id_akun
+    """
     cur.execute(query_insertAkun, (username, password))
     id_akun_baru = cur.fetchone()[0]
 
-    query_checkCamat = """SELECT id_kecamatan FROM kecamatan
-    WHERE LOWER(nama_kecamatan) = LOWER(%s)"""
+    query_checkCamat = """
+        SELECT id_kecamatan FROM kecamatan
+        WHERE LOWER(nama_kecamatan) = LOWER(%s)
+    """
     cur.execute(query_checkCamat, (camat,))
     hasil = cur.fetchone()
 
     if hasil:
         id_kecamatan = hasil[0]
     else:
-        query_insertCamat = """INSERT INTO kecamatan (nama_kecamatan)
-        VALUES (%s) RETURNING id_kecamatan"""
+        query_insertCamat = """
+            INSERT INTO kecamatan (nama_kecamatan)
+            VALUES (%s) RETURNING id_kecamatan
+        """
         cur.execute(query_insertCamat, (camat,))
         id_kecamatan = cur.fetchone()[0]
-    query_checkLurah = """SELECT id_kelurahan FROM kelurahan
-    WHERE LOWER(nama_kelurahan) = LOWER(%s) AND id_kecamatan = %s"""
 
+    query_checkLurah = """
+        SELECT id_kelurahan FROM kelurahan
+        WHERE LOWER(nama_kelurahan) = LOWER(%s)
+          AND id_kecamatan = %s
+    """
     cur.execute(query_checkLurah, (lurah, id_kecamatan))
     hasilKel = cur.fetchone()
 
     if hasilKel:
         id_kelurahan = hasilKel[0]
     else:
-        query_insertLurah = """INSERT INTO kelurahan (nama_kelurahan, id_kecamatan)
-        VALUES (%s, %s) RETURNING id_kelurahan"""
+        query_insertLurah = """
+            INSERT INTO kelurahan (nama_kelurahan, id_kecamatan)
+            VALUES (%s, %s) RETURNING id_kelurahan
+        """
         cur.execute(query_insertLurah, (lurah, id_kecamatan))
         id_kelurahan = cur.fetchone()[0]
         
-
-    query_insertPembeli = "INSERT INTO pembeli (nama, no_telp, alamat, id_akun, id_kelurahan) VALUES (%s, %s, %s, %s, %s)"
+    query_insertPembeli = """
+        INSERT INTO pembeli (nama, no_telp, alamat, id_akun, id_kelurahan)
+        VALUES (%s, %s, %s, %s, %s)
+    """
     cur.execute(query_insertPembeli, (nama, no_telp, alamat, id_akun_baru, id_kelurahan))
 
     conn.commit()
 
-    print("Berhasil Membuat Akun!")
+    info("Berhasil Membuat Akun!")
     print(f"ID Akun : {id_akun_baru}")
 
     conn.close()
-
 
 def mainLogin():
     global current_user_id
     global admins_id_admin
     conn, cur = connectDB()
 
-    print("===LOGIN===")
-    username = input("Masukkan username = ")
-    password = input("Masukkan password = ")
-    id_akun, role = login(username, password)
+    section_title("LOGIN")
+    username = input("Masukkan username : ")
+    password = input("Masukkan password : ")
+    id_akun, _ = login(username, password)
 
-    query_select = """SELECT a.id_akun, r.nama_role, p.id_pembeli
-    FROM akun a JOIN roles r ON a.id_role = r.id_role
-    LEFT JOIN pembeli p ON p.id_akun = a.id_akun
-    WHERE a.username = %s AND a.passwords = %s"""
+    query_select = """
+        SELECT a.id_akun, r.nama_role, p.id_pembeli
+        FROM akun a
+        JOIN roles r  ON a.id_role = r.id_role
+        LEFT JOIN pembeli p ON p.id_akun = a.id_akun
+        WHERE a.username = %s AND a.passwords = %s
+    """
 
     cur.execute(query_select, (username, password))
     row = cur.fetchone()
 
     if not row:
-        print("Login gagal!")
+        warn("Login gagal!")
         return False
 
     id_akun, role, id_pembeli = row
@@ -1199,8 +1405,7 @@ def mainLogin():
     else:
         current_user_id = id_akun
 
-
-    print("Login berhasil sebagai:", role)
+    info(f"Login berhasil sebagai: {role}")
 
     if role == "admin":
         print("Anda login sebagai admin")
@@ -1228,7 +1433,6 @@ def mainAdmin():
         return
         
     while True:
-        # TAMPILAN + ARROW
         pilihan = menu_kopi("MAIN ADMIN", [
             "Tambah Akun Admin",
             "Hapus Akun Admin",
@@ -1241,7 +1445,6 @@ def mainAdmin():
             "LogOut"
         ])
 
-        # LOGIKA TIDAK DIUBAH
         if pilihan == 1:
             addAdmin()
         elif pilihan == 2:
@@ -1274,7 +1477,6 @@ def mainPetani():
         return
 
     while True:
-        # TAMPILAN + ARROW
         pilihan = menu_kopi("MAIN PETANI", [
             "Input Data Awal Penanaman",
             "Input Data Perkembangan Tanaman",
@@ -1283,7 +1485,6 @@ def mainPetani():
             "LogOut"
         ])
 
-        # LOGIKA TETAP
         if pilihan == 1:
             dataPenanaman(id_petani)
         elif pilihan == 2:
@@ -1300,7 +1501,6 @@ def mainPetani():
 
 def mainPembeli():
     while True:
-        # TAMPILAN + ARROW
         pilihan = menu_kopi("MAIN PEMBELI", [
             "Tampilkan Stok Kopi",
             "Order Kopi",
@@ -1308,7 +1508,6 @@ def mainPembeli():
             "LogOut"
         ])
         
-        # LOGIKA TETAP
         if pilihan == 1:
             stokKopi()
         elif pilihan == 2:
@@ -1322,15 +1521,14 @@ def mainPembeli():
             print("Pilihan Invalid!")
 
 def KoMen():
+    banner_komen()
     while True:
-        # HANYA tampilannya & cara ambil pilihan yang diganti
         pilihan = menu_kopi("MENU UTAMA", [
             "Register",
             "Login",
             "Keluar"
         ])
 
-        # LOGIKA TETAP SAMA
         if pilihan == 1:
             mainRegister()
         elif pilihan == 2:
@@ -1340,4 +1538,5 @@ def KoMen():
             break
         else:
             print("Pilihan Invalid")
+
 KoMen()
