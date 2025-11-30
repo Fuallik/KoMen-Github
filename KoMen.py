@@ -6,31 +6,37 @@ current_user_id = None
 
 def connectDB():
     try:
-        conn = psycopg2.connect(host="localhost", port="5433", user="postgres", password="admin123", dbname="KoMen")
+        conn = psycopg2.connect(host="localhost", port="5432", user="postgres", password="123", dbname="KoMen")
         cur = conn.cursor()
         #print("mantap")
         return conn, cur
     except Exception:
-        print("koneksi gagal")
+        print("Koneksi gagal")
         return None
 
 def getPetaniIdByAkun(id_akun):
-    conn, cur = connectDB()
-    cur.execute("SELECT id_petani FROM petani_kopi WHERE id_akun = %s", (id_akun,))
-    row = cur.fetchone()
-    conn.close()
-    if row:
-        return row[0]
-    return None
+    try:
+        conn, cur = connectDB()
+        cur.execute("SELECT id_petani FROM petani_kopi WHERE id_akun = %s", (id_akun,))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return row[0]
+    except Exception:
+        print("Terjadi kesalahan di fungsi getPetaniIdByAkun")
+        return None
 
 def getAdminIdByAkun(id_akun):
-    conn, cur = connectDB()
-    cur.execute("SELECT id_admin FROM admins WHERE id_akun = %s", (id_akun,))
-    row = cur.fetchone()
-    conn.close()
-    if row:
-        return row[0]
-    return None
+    try:
+        conn, cur = connectDB()
+        cur.execute("SELECT id_admin FROM admins WHERE id_akun = %s", (id_akun,))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return row[0]
+    except Exception:
+        print("Terjadi kesalahan di fungsi getAdminIdByAkun")
+        return None
 
 def updateProduct(nama, id_admin):
     try:
@@ -42,41 +48,49 @@ def updateProduct(nama, id_admin):
         print("UDAH KEGANTI BOS")
         conn.close()
     except Exception:
-        print("ada salahnya bos")
+        print("Terjadi kesalahan di fungsi updateProduct")
         return None
 
 def login(username, password):
-    conn, cur = connectDB()
-    query_akun = "SELECT id_akun, id_role FROM akun WHERE username = %s AND passwords = %s"
-    cur.execute(query_akun, (username, password))
-    data = cur.fetchone()
-    conn.close()
+    try:
+        conn, cur = connectDB()
+        query_akun = "SELECT id_akun, id_role FROM akun WHERE username = %s AND passwords = %s"
+        cur.execute(query_akun, (username, password))
+        data = cur.fetchone()
+        conn.close()
 
-    if data is None:
+        if data is None:
+            return None, None
+
+        id_akun, role = data
+
+        nama_role = {1: "admin", 
+                    2: "petani", 
+                    3: "pembeli"
+                }.get(role, "unknown")
+
+        return id_akun, nama_role
+    except Exception:
+        print("Terjadi kesalahan di fungsi login")
         return None, None
 
-    id_akun, role = data
-
-    nama_role = {1: "admin", 
-                2: "petani", 
-                3: "pembeli"
-            }.get(role, "unknown")
-
-    return id_akun, nama_role
-
 def getAllProduct():
-    conn, cur = connectDB()
-    query_select = "SELECT * FROM admins"
+    try:
+        conn, cur = connectDB()
+        query_select = "SELECT * FROM admins"
 
-    cur.execute(query_select)
-    data = cur.fetchall()
-    #for row in data:
-    #    print(row)
-    data = pd.DataFrame(data, columns=["id admin", "nama", "no telepon"])
-    data.index += 1 #memulai index dari 1
-    data.drop(columns=[""], inplace=True) #menghapus kolom
-    print(data)
-    conn.close()
+        cur.execute(query_select)
+        data = cur.fetchall()
+        #for row in data:
+        #    print(row)
+        data = pd.DataFrame(data, columns=["id admin", "nama", "no telepon"])
+        data.index += 1 #memulai index dari 1
+        data.drop(columns=[""], inplace=True) #menghapus kolom
+        print(data)
+        conn.close()
+    except Exception:
+        print("Terjadi kesalahan di fungsi getAllProduct")
+        return None
 
 def lihatPenanaman(id_petani):
     conn, cur = connectDB()
@@ -582,7 +596,12 @@ def ajuStok():
             print("===PENGAJUAN STOK KOPI===")
             stokKopi()
 
-            id_kopi = input("Masukkan ID Kopi yang ingin diajukan stoknya : ")
+            try:
+                id_kopi = int(input("Masukkan ID Kopi yang ingin diajukan stoknya : "))
+            except ValueError:
+                print("ID kopi harus berupa angka!")
+                conn.close()
+                continue
 
             try:
                 kuantitas = int(input("Masukkan jumlah stok yang diajukan : "))
@@ -591,7 +610,7 @@ def ajuStok():
                 conn.close()
                 continue
 
-            cur.execute("SELECT jenis_kopi FROM jenis_kopi WHERE id_jenis_kopi = %s", (id_jenis_kopi,))
+            cur.execute("SELECT j.jenis_kopi, k.id_kopi FROM jenis_kopi j JOIN kopi k ON j.id_jenis_kopi = k.id_jenis_kopi WHERE id_kopi = %s", (id_kopi,))
             row = cur.fetchone()
             if not row:
                 print("ID kopi tidak ditemukan!")
@@ -1137,14 +1156,3 @@ def KoMen():
             print("Pilihan Invalid")
 
 KoMen()
-
-
-
-
-
-
-
-
-#addKopi("27-10-2025", "kopi jayapura") ini buat nambah
-#getAdminsById(1)
-#updateProduct('Semi God Bintang', 2)
