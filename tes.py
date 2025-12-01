@@ -351,30 +351,46 @@ def addAdmin():
         while True:
             section_title("TAMBAH AKUN ADMIN")
 
-            username = input_kuning("Username Admin Baru  : ")
-            if not username.strip():
-                warn("Username tidak boleh kosong!")
-                continue
+            while True:
+                username = input_kuning("Username Admin Baru  : ")
+                if not username.strip():
+                    warn("Username tidak boleh kosong!")
+                    continue
+                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+                if cur.fetchone():
+                    warn("Username sudah digunakan, silakan gunakan username lain.")
+                    continue
+                break
 
-            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-            if cur.fetchone():
-                warn("Username sudah digunakan, silakan gunakan username lain.")
-                continue
+                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+                if cur.fetchone():
+                    warn("Username sudah digunakan, silakan gunakan username lain.")
+                    continue
+                break
 
-            pw = input_kuning("Password Admin Baru  : ")
-            if not pw.strip():
-                warn("Password tidak boleh kosong!")
-                continue
+            while True:
+                pw = input_kuning("Password Admin Baru  : ")
+                if not pw.strip():
+                    warn("Password tidak boleh kosong!")
+                    continue
+                break
 
-            nama = input_kuning("Nama Admin Baru      : ").title()
-            if not nama.strip():
-                warn("Nama admin tidak boleh kosong!")
-                continue
+            while True:
+                nama = input_kuning("Nama Admin Baru      : ").title()
+                if not nama.strip():
+                    warn("Nama admin tidak boleh kosong!")
+                    continue
+                break
 
-            no_telp = input_kuning("Nomor Telepon        : ")
-            if not no_telp.strip():
-                warn("Nomor telepon tidak boleh kosong!")
-                continue
+            while True:
+                no_telp = input_kuning("Nomor Telepon        : ")
+                if not no_telp.strip():
+                    warn("Nomor telepon tidak boleh kosong!")
+                    continue
+                if not no_telp.isdigit():
+                    warn("Nomor telepon harus berupa angka!")
+                    continue
+                break
 
             query_insert = """
                 INSERT INTO akun (username, passwords, id_role)
@@ -464,49 +480,61 @@ def addPetani():
         while True:
             section_title("TAMBAH AKUN PETANI")
 
-            username = input_kuning("Masukkan Username Petani Baru : ")
-            if not username.strip():
-                warn("Username tidak boleh kosong!")
-                continue
-            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-            if cur.fetchone():
-                warn("Username sudah digunakan, silakan gunakan username lain.")
-                continue
+            while True:
+                username = input_kuning("Masukkan Username Petani Baru : ")
+                if not username.strip():
+                    warn("Username tidak boleh kosong!")
+                    continue
+                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+                if cur.fetchone():
+                    warn("Username sudah digunakan, silakan gunakan username lain.")
+                    continue
+                break
 
-            pw = input_kuning("Masukkan Password Petani Baru : ")
-            if not pw.strip():
-                warn("Password tidak boleh kosong!")
-                continue
+            while True:
+                pw = input_kuning("Masukkan Password Petani Baru : ")
+                if not pw.strip():
+                    warn("Password tidak boleh kosong!")
+                    continue
+                break
 
-            nama = input_kuning("Masukkan Nama Petani Baru     : ").title()
-            if not nama.strip():
-                warn("Nama petani tidak boleh kosong!")
-                continue
+            while True:
+                nama = input_kuning("Masukkan Nama Petani Baru     : ").title()
+                if not nama.strip():
+                    warn("Nama petani tidak boleh kosong!")
+                    continue
+                break
 
-            alamat = input_kuning("Masukkan Alamat Petani Baru   : ").title()
-            if not alamat.strip():
-                warn("Alamat tidak boleh kosong!")
-                continue
+            while True:
+                alamat = input_kuning("Masukkan Alamat Petani Baru   : ").title()
+                if not alamat.strip():
+                    warn("Alamat tidak boleh kosong!")
+                    continue
+                break
 
-            lurah = input_kuning("Masukkan Kelurahan Petani     : ").title()
-            if not lurah.strip():
-                warn("Kelurahan tidak boleh kosong!")
-                continue
+            while True:
+                lurah = input_kuning("Masukkan Kelurahan Petani     : ").title()
+                if not lurah.strip():
+                    warn("Kelurahan tidak boleh kosong!")
+                    continue
+                break
 
-            camat = input_kuning("Masukkan Kecamatan Petani     : ").title()
-            if not camat.strip():
-                warn("Kecamatan tidak boleh kosong!")
-                continue
+            while True:
+                camat = input_kuning("Masukkan Kecamatan Petani     : ").title()
+                if not camat.strip():
+                    warn("Kecamatan tidak boleh kosong!")
+                    continue
+                break
 
-            no_telp = input_kuning("Masukkan Nomor Telepon        : ")
-            if not no_telp.strip():
-                warn("Nomor telepon tidak boleh kosong!")
-                continue
-
-            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-            if cur.fetchone():
-                warn("Username sudah digunakan, silakan gunakan username lain.")
-                continue
+            while True: 
+                no_telp = input_kuning("Masukkan Nomor Telepon        : ")
+                if not no_telp.strip():
+                    warn("Nomor telepon tidak boleh kosong!")
+                    continue
+                if not no_telp.isdigit():
+                    warn("Nomor telepon harus berupa angka!")
+                    continue
+                break
 
             query_insert = """
                 INSERT INTO akun(username, passwords, id_role)
@@ -876,7 +904,7 @@ def feedback(id_admin):
         info("Feedback berhasil dikirim!")
         print(f"ID Feedback : {id_feedback_baru}")
     except Exception as e:
-        print("Terjadi kesalahan di fungsi feedback:", e)
+        print("Telah keluar dari feedback")
 
 
 #################### PETANI ####################
@@ -891,18 +919,42 @@ def dataPenanaman(id_petani):
             "Pakai jenis kopi yang SUDAH ADA di tabel kopi",
             "Catat JENIS KOPI BARU (belum ada di tabel kopi)"
         ])
+        while True:
+            jenis_kopi = input_kuning("Masukkan Jenis Kopi : ").title()
+            if not jenis_kopi.strip():
+                warn("Jenis Kopi tidak boleh kosong!")
+                continue
+            break
 
-        jenis_kopi = input_kuning("Masukkan Jenis Kopi : ").title()
-        tanggal_penanaman = input_kuning("Masukkan Tanggal Penanaman (YYYY-MM-DD) : ")
-        kuantitas = int(input_kuning("Masukkan Kuantitas : "))
-        deskripsi = input_kuning("Masukkan Deskripsi : ")
+        while True:
+            tanggal_penanaman = input_kuning("Masukkan Tanggal Penanaman (YYYY-MM-DD) : ")
+            try:
+                datetime.strptime(tanggal_penanaman, "%Y-%m-%d")
+                break
+            except ValueError:
+                warn("Format tanggal salah! Gunakan format YYYY-MM-DD, contoh: 2025-12-31.")
+
+        while True:
+            try:
+                kuantitas = int(input_kuning("Masukkan Kuantitas : "))
+            except ValueError:
+                warn("Kuantitas harus berupa angka!")
+                continue
+            break
+
+        while True:
+            deskripsi = input_kuning("Masukkan Deskripsi : ")
+            if not deskripsi.strip():
+                warn("Deskripsi tidak boleh kosong!")
+                continue
+            break
 
         id_kopi = None
 
         query_insert = """INSERT INTO data_penanaman (jenis_kopi,tanggal_penanaman, kuantitas, deskripsi)
         VALUES (%s, %s, %s, %s) RETURNING id_penanaman"""
         
-        cur.execute(query_insert, (jenis_kopi,tanggal_penanaman, kuantitas, deskripsi))
+        cur.execute(query_insert, (jenis_kopi, tanggal_penanaman, kuantitas, deskripsi))
         id_penanaman = cur.fetchone()[0]
 
         if pilihan == 1:
@@ -954,7 +1006,15 @@ def dataHari(id_petani):
         section_title("INPUT DATA PERKEMBANGAN TANAMAN")
         lihatPenanaman(id_petani)
 
-        id_penanaman = input_kuning("Masukkan ID Penanaman yang ingin ditambahkan perkembangan: ")
+        while True:
+            id_penanaman = input_kuning("Masukkan ID Penanaman yang ingin ditambahkan perkembangan: ")
+            if not id_penanaman.strip():
+                warn("ID Penanaman tidak boleh kosong!")
+                continue
+            if not id_penanaman.isdigit():
+                warn("ID Penanaman harus berupa angka!")
+                continue
+            break
 
         query_check = """
             SELECT p.id_penanaman, dp.id_kopi
@@ -968,7 +1028,12 @@ def dataHari(id_petani):
             conn.close()
             return
         
-        deskripsi = input_kuning("Masukkan deskripsi perkembangan: ")
+        while True:
+            deskripsi = input_kuning("Masukkan Deskripsi Perkembangan : ")
+            if not deskripsi.strip():
+                warn("Deskripsi tidak boleh kosong!")
+                continue
+            break
         tanggal   = datetime.now()
         
         query_insert = """
@@ -1012,14 +1077,14 @@ def ajuStok():
                 try:
                     id_kopi = int(input_kuning("Masukkan ID Kopi yang ingin diajukan stoknya : "))
                 except ValueError as e:
-                    print("ID kopi harus berupa angka!", e)
+                    print("ID kopi harus berupa angka dan tidak boleh kosong!")
                     conn.close()
                     continue
 
                 try:
                     kuantitas = int(input_kuning("Masukkan jumlah stok yang diajukan : "))
                 except ValueError as e:
-                    print("Kuantitas harus berupa angka!", e)
+                    print("Kuantitas harus berupa angka dan tidak boleh kosong!", e)
                     conn.close()
                     continue
 
@@ -1067,13 +1132,23 @@ def ajuStok():
                     return
 
                 section_title("PENGAJUAN KOPI JENIS BARU")
-                jenis_kopi = input_kuning("Masukkan Jenis Kopi Baru   : ").capitalize()
-                deskripsi  = input_kuning("Masukkan Deskripsi Kopi    : ")
+                while True:
+                    jenis_kopi = input_kuning("Masukkan Jenis Kopi Baru   : ").capitalize()
+                    if not jenis_kopi.strip():
+                        warn("Jenis Kopi Baru tidak boleh kosong!")
+                        continue
+                    break
+                while True:
+                    deskripsi  = input_kuning("Masukkan Deskripsi Kopi    : ")
+                    if not deskripsi.strip():
+                        warn("Deskripsi Kopi tidak boleh kosong!")
+                        continue
+                    break
                 try:
                     harga     = int(input_kuning("Masukkan Harga Kopi        : "))
                     kuantitas = int(input_kuning("Masukkan Jumlah Stok Awal  : "))
                 except ValueError as e:
-                    print("Harga dan kuantitas harus berupa angka!", e)
+                    print("Harga dan Jumlah Stok Awal harus berupa angka dan tidak boleh kosong!", e)
                     conn.close()
                     continue
                 kualitas = input_kuning("Masukkan Kualitas Kopi     : ").capitalize()
@@ -1172,12 +1247,16 @@ def orderKopi():
 
         section_title("ORDER KOPI")
         stokKopi()
-        
-        id_kopi = input_kuning("Masukkan ID Kopi : ")
+        while True:
+            id_kopi = input_kuning("Masukkan ID Kopi : ")
+            if not id_kopi.strip():
+                warn("ID Kopi tidak boleh kosong!")
+                continue
+            break
         try:
             jumlah  = int(input_kuning("Masukkan Jumlah : "))
         except ValueError as e:
-            print("Jumlah harus berupa angka!", e)
+            print("Jumlah harus berupa angka dan tidak boleh kosong!", e)
             conn.close()
             return
 
@@ -1494,13 +1573,13 @@ def mainRegister():
 
         while True:
             username = input_kuning("Masukkan username          : ")
+            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
             if not username.strip():
                 warn("Username tidak boleh kosong!")
                 continue
             if cur.fetchone():
                 warn("Username sudah digunakan, silakan gunakan username lain.")
                 continue
-                return
             break
             
 
@@ -1544,6 +1623,9 @@ def mainRegister():
             if not no_telp.strip():
                 warn("Nomor telepon tidak boleh kosong!")
                 continue
+            if not no_telp.isdigit():
+                    warn("Nomor telepon harus berupa angka!")
+                    continue
             break
 
         cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
@@ -1606,8 +1688,16 @@ def mainLogin():
             return False
 
         section_title("LOGIN")
-        username = input_kuning("Masukkan username : ")
-        password = input_kuning("Masukkan password : ")
+        while True:
+            username = input_kuning("Masukkan username : ")
+            if not username.strip():
+                warn("Username tidak boleh kosong!")
+                continue
+            password = input_kuning("Masukkan password : ")
+            if not password.strip():
+                warn("Password tidak boleh kosong!")
+                continue
+            break
         id_akun_login, _ = login(username, password)
 
         query_select = """
