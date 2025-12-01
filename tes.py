@@ -704,7 +704,17 @@ def stokKopi():
             conn.close()
             return
 
-        dataFrame = pd.DataFrame(data, columns=["ID Kopi", "Jenis Kopi", "Kualitas", "Harga", "Jumlah Stok", "Deskripsi"])
+        dataFrame = pd.DataFrame(
+            data,
+            columns=[
+                "ID Kopi",
+                "Jenis Kopi",
+                "Kualitas",
+                "Harga",
+                "Jumlah Stok",
+                "Deskripsi"
+            ]
+        )
 
         print_df_kopi(dataFrame, "STOK KOPI TERSEDIA")
         conn.close()
