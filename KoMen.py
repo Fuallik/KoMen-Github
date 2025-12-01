@@ -909,6 +909,7 @@ def dataPenanaman(id_petani):
             "Pakai jenis kopi yang SUDAH ADA di tabel kopi",
             "Catat JENIS KOPI BARU (belum ada di tabel kopi)"
         ])
+        section_title("INPUT DATA PENANAMAN JENIS KOPI")
         while True:
             jenis_kopi = input_kuning("Masukkan Jenis Kopi : ").title()
             if not jenis_kopi.strip():
@@ -1373,98 +1374,6 @@ def addKopi(tanggal_penanaman, deskripsi):
         conn.close()
     except Exception as e:
         print("Terjadi kesalahan di fungsi addKopi:", e)
-
-
-def addstokKopi():
-    try:
-        while True:
-            conn, cur = connectDB()
-            if conn is None:
-                return
-        
-            section_title("TAMBAH / UPDATE STOK KOPI")
-            stokKopi()
-            try:
-                id_kopi      = int(input_kuning("Masukkan ID Kopi         : "))
-                jumlah_stok  = int(input_kuning("Masukkan Jumlah Stok     : "))
-            except ValueError as e:
-                print("ID kopi dan jumlah stok harus angka!", e)
-                conn.close()
-                continue
-        
-            query_select = "SELECT jumlah_stok FROM kopi WHERE id_kopi = %s"
-            cur.execute(query_select, (id_kopi,))
-            data = cur.fetchone()
-        
-            if data is None:
-                print("Data Tidak Ditemukan!")
-                pilihan = yes_no_arrow("Tambah data kopi baru?")
-                if pilihan == "y":
-                    section_title("TAMBAH STOK BARU")
-
-                    jenis_kopi   = input_kuning("Masukkan Jenis Kopi Baru : ")
-                    nama_kopi    = input_kuning("Masukkan Nama Kopi       : ")
-                    deskripsi    = input_kuning("Masukkan Deskripsi Kopi  : ")
-                    try:
-                        harga        = int(input_kuning("Masukkan Harga Kopi      : "))
-                        jumlah_stok  = int(input_kuning("Masukkan Jumlah Stok     : "))
-                    except ValueError as e:
-                        print("Harga dan jumlah stok harus angka!", e)
-                        conn.close()
-                        continue
-                    kualitas     = input_kuning("Masukkan Kualitas Kopi   : ")
-                    while kualitas.upper() not in ("A", "B", "C"):
-                        warn("Kualitas hanya boleh A, B, atau C")
-                        kualitas     = input_kuning("Masukkan Kualitas Kopi (A-C)   : ")
-                    kualitas = kualitas.upper()
-
-                    query_insert = "INSERT INTO kopi(jenis_kopi, nama_kopi, deskripsi, harga, jumlah_stok, kualitas) VALUES (%s, %s, %s, %s, %s, %s)"
-                    cur.execute(query_insert, (jenis_kopi, nama_kopi, deskripsi, harga, jumlah_stok, kualitas))
-                    conn.commit()
-                    print("Data Kopi Baru Telah Ditambah!")
-                    conn.close()
-
-                    pilihan = yes_no_arrow("Lanjut tambah kopi lagi?")
-                    if pilihan == "y":
-                        continue
-                    elif pilihan == "n":
-                        break
-                    else:
-                        print("Pilihan Invalid!")
-
-                elif pilihan == "n":
-                    print("Program Penambahan Kopi Telah Dihentikan!")
-                    conn.close()
-                    break
-
-                else:
-                    print("Pilihan Invalid!")
-                    conn.close()
-
-            else:
-                print("===UPDATE STOCK===")
-                
-                id_kopi      = input_kuning("Masukkan ID Kopi        : ")
-                jumlah_stok  = input_kuning("Masukkan Jumlah Stok    : ")
-
-                query_update = "UPDATE kopi SET jumlah_stok = jumlah_stok + %s WHERE id_kopi = %s"
-                cur.execute(query_update, (jumlah_stok, id_kopi))
-        
-                conn.commit()
-                print("Stok Telah Diubah!")
-                conn.close()
-
-                print("Apakah anda ingin melanjutkan menambah stok kopi? [y/n]")
-                pilihan = yes_no_arrow("Lanjut tambah stok kopi?")
-                if pilihan == "y":
-                    continue
-                elif pilihan == "n":
-                    break
-                else:
-                    print("Pilihan Invalid!")
-    except Exception as e:
-        print("Terjadi kesalahan di fungsi addstokKopi:", e)
-
 
 def lihatAkunPetani():
     try:
