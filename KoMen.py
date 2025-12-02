@@ -240,20 +240,6 @@ def getAdminIdByAkun(id_akun):
         return None
 
 
-def updateProduct(nama, id_admin):
-    try:
-        conn, cur = connectDB()
-        if conn is None:
-            return
-        query_update = "UPDATE admins SET nama = %s WHERE id_admin = %s"
-        cur.execute(query_update, (nama, id_admin))
-        conn.commit()
-        print("UDAH KEGANTI BOS")
-        conn.close()
-    except Exception as e:
-        print("Terjadi kesalahan di fungsi updateProduct:", e)
-
-
 def login(username, password):
     try:
         conn, cur = connectDB()
@@ -280,36 +266,13 @@ def login(username, password):
         print("Terjadi kesalahan di fungsi login:", e)
         return None, None
 
-
-def getAllProduct():
-    try:
-        conn, cur = connectDB()
-        if conn is None:
-            return
-        query_select = "SELECT * FROM admins"
-
-        cur.execute(query_select)
-        data = cur.fetchall()
-        data = pd.DataFrame(data, columns=["id admin", "nama", "no telepon"])
-        print_df_kopi(data, "DATA ADMIN (RAW)")
-        conn.close()
-    except Exception as e:
-        print("Terjadi kesalahan di fungsi getAllProduct:", e)
-
-
 def lihatPenanaman(id_petani):
     try:
         conn, cur = connectDB()
         if conn is None:
             return
         query = """
-            SELECT p.id_penanaman,
-                   p.jenis_kopi,
-                   p.kuantitas,
-                   p.tanggal_penanaman,
-                   p.deskripsi,
-                   d.id_petani
-            FROM data_penanaman p
+            SELECT p.id_penanaman, p.jenis_kopi, p.kuantitas, p.tanggal_penanaman, p.deskripsi, d.id_petani FROM data_penanaman p
             JOIN detail_petani d ON (p.id_penanaman = d.id_penanaman) 
             WHERE id_petani = %s
             ORDER BY id_penanaman ASC
@@ -356,12 +319,6 @@ def addAdmin():
                 if not username.strip():
                     warn("Username tidak boleh kosong!")
                     continue
-                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-                if cur.fetchone():
-                    warn("Username sudah digunakan, silakan gunakan username lain.")
-                    continue
-                break
-
                 cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
                 if cur.fetchone():
                     warn("Username sudah digunakan, silakan gunakan username lain.")
@@ -804,8 +761,7 @@ def verifikasiStok():
 
             keputusan = yes_no_arrow("Setujui pengajuan ini?")
             if keputusan == "y":
-                for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama, qty,
-                     jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
+                for (id_ver, nama_petani, id_det, id_kopi, jenis_kopi_lama, qty, jenis_baru, desk_baru, harga_baru, kualitas_baru) in details:
 
                     if id_kopi is not None:
                         cur.execute(
@@ -909,7 +865,6 @@ def dataPenanaman(id_petani):
             "Pakai jenis kopi yang SUDAH ADA di tabel kopi",
             "Catat JENIS KOPI BARU (belum ada di tabel kopi)"
         ])
-        section_title("INPUT DATA PENANAMAN JENIS KOPI")
         while True:
             jenis_kopi = input_kuning("Masukkan Jenis Kopi : ").title()
             if not jenis_kopi.strip():
@@ -1360,21 +1315,6 @@ def history():
     except Exception as e:
         print("Gagal mengambil riwayat:", e)
 
-
-def addKopi(tanggal_penanaman, deskripsi):
-    try:
-        conn, cur = connectDB()
-        if conn is None:
-            return
-        query_insert = "INSERT INTO data_penanaman(tanggal_penanaman, deskripsi) VALUES(%s, %s)"
-
-        cur.execute(query_insert, (tanggal_penanaman, deskripsi))
-        conn.commit()
-        print('Data Telah ditambahkan')
-        conn.close()
-    except Exception as e:
-        print("Terjadi kesalahan di fungsi addKopi:", e)
-
 def lihatAkunPetani():
     try:
         conn, cur = connectDB()
@@ -1428,37 +1368,6 @@ def lihatAkunAdmin():
         conn.close()
     except Exception as e:
         print("Terjadi kesalahan di fungsi lihatAkunAdmin:", e)
-
-
-def daRiPetani():
-    try:
-        conn, cur = connectDB()
-        if conn is None:
-            return
-
-        query = """
-            SELECT id_harian, id_penanaman, tanggal_penanaman, deskripsi
-            FROM data_harian
-            ORDER BY tanggal_penanaman ASC
-        """
-        cur.execute(query)
-        data = cur.fetchall()
-
-        if not data:
-            print("Data Harian Petani masih kosong.")
-            conn.close()
-            return
-
-        df = pd.DataFrame(
-            data,
-            columns=["ID Data Harian", "ID Penanaman", "Tanggal Penanaman", "Deskripsi"]
-        )
-
-        print_df_kopi(df, "DATA HARIAN PETANI")
-        conn.close()
-    except Exception as e:
-        print("Terjadi kesalahan di fungsi daRiPetani:", e)
-
 
 ##################### MAIN (REGISTER / LOGIN / MENU) ####################
 
