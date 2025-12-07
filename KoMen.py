@@ -11,11 +11,11 @@ current_user_id = None
 
 ########### STYLES ##############
 
-COFFEE      = Fore.YELLOW               
+COFFEE      = Fore.LIGHTYELLOW_EX             
 RESET       = Style.RESET_ALL           
-HIGHLIGHT   = Back.YELLOW + Fore.BLUE + Style.BRIGHT 
+HIGHLIGHT   = Back.YELLOW + Fore.BLACK + Style.BRIGHT 
 
-TABLE_BORDER = Fore.CYAN                
+TABLE_BORDER = Fore.LIGHTYELLOW_EX              
 TABLE_TEXT   = Fore.WHITE   
 
 def menu_kopi(title: str, options: list[str]) -> int:
