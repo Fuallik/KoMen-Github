@@ -5,19 +5,18 @@ import os
 import msvcrt
 from tabulate import tabulate
 import pyfiglet
-from colorama import Fore, Style, init
+from colorama import Fore,Back , Style, init
 
 current_user_id = None
 
 ########### STYLES ##############
 
-COFFEE    = "\033[38;5;94m"   
-RESET     = "\033[0m"
-HIGHLIGHT = "\033[7m"         
+COFFEE      = Fore.LIGHTYELLOW_EX             
+RESET       = Style.RESET_ALL           
+HIGHLIGHT   = Back.YELLOW + Fore.BLACK + Style.BRIGHT 
 
-TABLE_BORDER = "\033[38;5;178m" 
-TABLE_TEXT   = "\033[97m"       
-
+TABLE_BORDER = Fore.LIGHTYELLOW_EX              
+TABLE_TEXT   = Fore.WHITE   
 
 def menu_kopi(title: str, options: list[str]) -> int:
     try:
@@ -575,6 +574,9 @@ def delPetani():
             data = cur.fetchone()
 
             if not data:
+                print("\033[?25l", end="")
+
+                os.system('cls')
                 warn("Akun Petani Tidak Ditemukan!")
                 conn.close()
                 return
