@@ -574,6 +574,9 @@ def delPetani():
             data = cur.fetchone()
 
             if not data:
+                print("\033[?25l", end="")
+
+                os.system('cls')
                 warn("Akun Petani Tidak Ditemukan!")
                 conn.close()
                 return
