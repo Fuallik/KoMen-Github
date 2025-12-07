@@ -11,9 +11,10 @@ current_user_id = None
 
 ########### STYLES ##############
 
-COFFEE      = Fore.LIGHTYELLOW_EX             
-RESET       = Style.RESET_ALL           
-HIGHLIGHT   = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT 
+
+COFFEE    = "\033[38;5;94m"   
+RESET     = "\033[0m"
+HIGHLIGHT = "\033[7m"         
 
 TABLE_BORDER = Fore.LIGHTYELLOW_EX              
 TABLE_TEXT   = Fore.WHITE   
