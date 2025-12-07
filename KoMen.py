@@ -1547,7 +1547,6 @@ def mainLogin():
         else:
             print("ERROR: Role tidak diketahui")
             conn.close()
-
         return True
     except Exception as e:
         print("Terjadi kesalahan di fungsi mainLogin:", e)
@@ -1558,6 +1557,9 @@ def mainAdmin():
     global current_user_id
 
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         id_akun_admin = current_user_id
         id_admin = getAdminIdByAkun(id_akun_admin)
 
@@ -1602,11 +1604,13 @@ def mainAdmin():
     except Exception as e:
         print("Terjadi kesalahan di fungsi mainAdmin:", e)
 
-
 def mainPetani():
     global current_user_id
 
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         id_akun_petani = current_user_id
         id_petani = getPetaniIdByAkun(id_akun_petani)
         if id_petani is None:
@@ -1641,6 +1645,9 @@ def mainPetani():
 
 def mainPembeli():
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         while True:
             pilihan = menu_kopi("MAIN PEMBELI", [
                 "Tampilkan Stok Kopi",
