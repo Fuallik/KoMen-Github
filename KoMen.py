@@ -314,12 +314,16 @@ def addAdmin():
         while True:
             section_title("TAMBAH AKUN ADMIN")
 
-            username = input_kuning("Username Admin Baru  : ")
-            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-            if cur.fetchone():
-                warn("Username sudah digunakan, silakan gunakan username lain.")
-                continue
-                
+            while True:
+                username = input_kuning("Username Admin Baru  : ")
+                if not username.strip():
+                    warn("Username tidak boleh kosong!")
+                    continue
+                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+                if cur.fetchone():
+                    warn("Username sudah digunakan, silakan gunakan username lain.")
+                    continue
+                break
 
             while True:
                 pw = input_kuning("Password Admin Baru  : ")
@@ -343,10 +347,6 @@ def addAdmin():
                 if not no_telp.isdigit():
                     warn("Nomor telepon harus berupa angka!")
                     continue
-                break
-
-            if not username.strip():
-                warn("Username tidak boleh kosong!")
                 break
 
             query_insert = """
@@ -1376,67 +1376,67 @@ def mainRegister():
         conn, cur = connectDB()
         if conn is None:
             return
+        
+        section_title("REGISTER PEMBELI")
+
         while True:
-            section_title("REGISTER PEMBELI")
-
-            while True:
-                username = input_kuning("Masukkan username          : ")
-                cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
-                
-                if cur.fetchone():
-                    warn("Username sudah digunakan, silakan gunakan username lain.")
-                    continue
-                break
-                
-
-            while True:
-                password = input_kuning("Masukkan password          : ")
-                if not password.strip():
-                    warn("Password tidak boleh kosong!")
-                    continue
-                break
-
-            while True:
-                nama = input_kuning("Masukkan nama              : ").title()
-                if not nama.strip():
-                    warn("Nama tidak boleh kosong!")
-                    continue
-                break
-
-            while True:
-                alamat = input_kuning("Masukkan alamat            : ").title()
-                if not alamat.strip():
-                    warn("Alamat tidak boleh kosong!")
-                    continue
-                break
-
-            while True:
-                lurah = input_kuning("Masukkan Kelurahan         : ").title()
-                if not lurah.strip():
-                    warn("Kelurahan tidak boleh kosong!")
-                    continue
-                break
-
-            while True:
-                camat = input_kuning("Masukkan Kecamatan         : ").title()
-                if not camat.strip():
-                    warn("Kecamatan tidak boleh kosong!")
-                    continue
-                break
-
-            while True:
-                no_telp = input_kuning("Masukkan no telpon aktif   : ")
-                if not no_telp.strip():
-                    warn("Nomor telepon tidak boleh kosong!")
-                    continue
-                if not no_telp.isdigit():
-                        warn("Nomor telepon harus berupa angka!")
-                        continue
-                break
-
+            username = input_kuning("Masukkan username          : ")
             if not username.strip():
                 warn("Username tidak boleh kosong!")
                 break
+            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+            if cur.fetchone():
+                warn("Username sudah digunakan, silakan gunakan username lain.")
+                continue
+            break
+                
+
+        while True:
+            password = input_kuning("Masukkan password          : ")
+            if not password.strip():
+                warn("Password tidak boleh kosong!")
+                continue
+            break
+
+        while True:
+            nama = input_kuning("Masukkan nama              : ").title()
+            if not nama.strip():
+                warn("Nama tidak boleh kosong!")
+                continue
+            break
+
+        while True:
+            alamat = input_kuning("Masukkan alamat            : ").title()
+            if not alamat.strip():
+                warn("Alamat tidak boleh kosong!")
+                continue
+            break
+
+        while True:
+            lurah = input_kuning("Masukkan Kelurahan         : ").title()
+            if not lurah.strip():
+                warn("Kelurahan tidak boleh kosong!")
+                continue
+            break
+
+        while True:
+            camat = input_kuning("Masukkan Kecamatan         : ").title()
+            if not camat.strip():
+                warn("Kecamatan tidak boleh kosong!")
+                continue
+            break
+
+        while True:
+            no_telp = input_kuning("Masukkan no telpon aktif   : ")
+            if not no_telp.strip():
+                warn("Nomor telepon tidak boleh kosong!")
+                continue
+            if not no_telp.isdigit():
+                    warn("Nomor telepon harus berupa angka!")
+                    continue
+            break
+
+        
 
         cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
         if cur.fetchone():
