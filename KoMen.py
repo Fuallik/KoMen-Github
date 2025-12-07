@@ -13,7 +13,7 @@ current_user_id = None
 
 COFFEE      = Fore.LIGHTYELLOW_EX             
 RESET       = Style.RESET_ALL           
-HIGHLIGHT   = Back.YELLOW + Fore.BLACK + Style.BRIGHT 
+HIGHLIGHT   = Back.LIGHTYELLOW_EX + Fore.BLACK + Style.BRIGHT 
 
 TABLE_BORDER = Fore.LIGHTYELLOW_EX              
 TABLE_TEXT   = Fore.WHITE   
