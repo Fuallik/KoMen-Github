@@ -6,7 +6,6 @@ import msvcrt
 from tabulate import tabulate
 import pyfiglet
 from colorama import Fore, Style, init
-import questionary
 
 current_user_id = None
 
