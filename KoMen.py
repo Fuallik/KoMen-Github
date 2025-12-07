@@ -1376,20 +1376,20 @@ def mainRegister():
         conn, cur = connectDB()
         if conn is None:
             return
-        
+
         section_title("REGISTER PEMBELI")
 
         while True:
             username = input_kuning("Masukkan username          : ")
+            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
             if not username.strip():
                 warn("Username tidak boleh kosong!")
-                break
-            cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
+                continue
             if cur.fetchone():
                 warn("Username sudah digunakan, silakan gunakan username lain.")
                 continue
             break
-                
+            
 
         while True:
             password = input_kuning("Masukkan password          : ")
@@ -1435,8 +1435,6 @@ def mainRegister():
                     warn("Nomor telepon harus berupa angka!")
                     continue
             break
-
-        
 
         cur.execute("SELECT 1 FROM akun WHERE username = %s", (username,))
         if cur.fetchone():
@@ -1549,7 +1547,6 @@ def mainLogin():
         else:
             print("ERROR: Role tidak diketahui")
             conn.close()
-
         return True
     except Exception as e:
         print("Terjadi kesalahan di fungsi mainLogin:", e)
@@ -1560,6 +1557,9 @@ def mainAdmin():
     global current_user_id
 
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         id_akun_admin = current_user_id
         id_admin = getAdminIdByAkun(id_akun_admin)
 
@@ -1604,11 +1604,13 @@ def mainAdmin():
     except Exception as e:
         print("Terjadi kesalahan di fungsi mainAdmin:", e)
 
-
 def mainPetani():
     global current_user_id
 
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         id_akun_petani = current_user_id
         id_petani = getPetaniIdByAkun(id_akun_petani)
         if id_petani is None:
@@ -1643,6 +1645,9 @@ def mainPetani():
 
 def mainPembeli():
     try:
+        print("\033[?25l", end="")
+
+        os.system('cls')
         while True:
             pilihan = menu_kopi("MAIN PEMBELI", [
                 "Tampilkan Stok Kopi",
